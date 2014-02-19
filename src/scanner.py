@@ -4,16 +4,82 @@ import re
 
 TOKENTYPES = ['id','int','op','punct', 'True', 'False', 'if', 'then',
 'else', 'while', 'return', 'Void', 'Int', 'Bool', 'hd', 'tl', 'fst', 'snd']
-
 OPERATORS = ['!', '-', '+','-', '*', '/', '%', '==',
 		'<', '>', '<=', '>=', '!=', '&&', '||', ':']
-
 PUNCTUATION = [',', ';', '{', '}', '[', ']', '(', ')', '=']
-
 KEYWORDS = ['True', 'False', 'if', 'then', 'else',
 			'while', 'return', 'Void', 'Int', 'Bool']
-
 METHODS = ['hd', 'tl', 'fst', 'snd']
+
+def handle_comments(f, blockcomment):
+	if blockcomment:
+		last_two = ''
+		while last_two != '*/':
+			c = f.read(1)
+			last_two += c
+			last_two = last_two[-2:]
+	else:
+		f.readline()
+
+def update_candidates(candidates, token):
+	for t in list(candidates):
+		if t == 'id':
+			if not re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
+				candidates.remove(t)
+		if t == 'int':
+			if not token.isdigit():
+				candidates.remove(t)
+		if t == 'op':
+			if not any(x.startswith(token) for x in OPERATORS):
+				candidates.remove(t)
+		if t == 'punct':
+			if token not in PUNCTUATION:
+				candidates.remove(t)
+		if t in KEYWORDS:
+			if not t.startswith(token):
+				candidates.remove(t)
+		if t in METHODS:
+			if not token[0] == '.' or not any(x.startswith(token[1:]) for x in METHODS):
+				candidates.remove(t)
+
+def complete_token(candidates, prevcandidates, token, prevtoken, tokens, f):
+	if len(prevcandidates) == 1:
+		t = prevcandidates[0]
+		if t in ['id', 'op', 'punct']:
+			tokens.append((t, prevtoken))
+		elif t == 'int':
+			tokens.append((t, int(prevtoken)))
+		elif t in ['True', 'False']:
+			tokens.append((t, prevtoken == 'True')) # to store the boolean value
+		else:
+			tokens.append((t, ))  # still add a tuple, for type consistency
+	else: # so there were multiple previous candidates and we need to perform a tiebreak
+		for t in list(prevcandidates):
+			if t in KEYWORDS and prevtoken == t:
+				# this is always the keyword, and not a prefix of an id - otherwise we would not be in len() = 0.
+				tokens.append((t, ))
+				break
+			elif t == 'punct' and prevtoken in PUNCTUATION:
+				# this case only exists when prevtoken is '=', since that overlaps with operator '=='
+				# but now this operator is apparently no longer a candidate for token (since N = 0),
+				# so it must be a punct '=' token
+				tokens.append((t, prevtoken))
+				break
+			elif t == 'op' and prevtoken in OPERATORS:
+				tokens.append((t, prevtoken))
+				break
+			elif t in METHODS and prevtoken[1:] == t:
+				tokens.append((t, ))
+				break
+			elif t == 'int' and prevtoken.isdigit():
+				tokens.append((t, int(prevtoken)))
+				break
+		# all that remains is an id-type (as we did not break in any of the if-statements)
+		else:
+			if re.match('^[a-z][a-z0-9_]*\Z', prevtoken, re.IGNORECASE):
+				tokens.append(('id', prevtoken))
+			else:
+				raise Exception("Unrecognised token: "+prevtoken)
 
 def scan_spl(fname):
 	tokens = []
@@ -23,81 +89,30 @@ def scan_spl(fname):
 		while True:
 			c = f.read(1)
 			token += c
-			if len(token.strip()) == 0:
+			if len(token.strip()) == 0 and c:
 				token = ''
 				continue
-			for t in list(candidates):
-				if t == 'id':
-					if not re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
-						candidates.remove(t)
-				if t == 'int':
-					if not token.isdigit():
-						candidates.remove(t)
-				if t == 'op':
-					if not any(x.startswith(token)
-							for x in OPERATORS):
-						candidates.remove(t)
-				if t == 'punct':
-					if token not in PUNCTUATION:
-						candidates.remove(t)
-				if t in KEYWORDS:
-					if not t.startswith(token):
-						candidates.remove(t)
-				if t in METHODS:
-					if token[0] == '.':
-						if not any(x.startswith(token[1:]) for x in METHODS):
-							candidates.remove(t)
-					else:
-						candidates.remove(t)
-			print "Candidates:" , candidates, "Token:", token
-			if len(candidates) == 0  or c == '': # c = '' only at the end of the file
-				if len(prevcandidates) == 1:
-					t = prevcandidates[0]
-					if t in ['id', 'op', 'punct']:
-						tokens.append((t, prevtoken))
-					elif t == 'int':
-						tokens.append((t, int(prevtoken)))
-					elif t in ['True', 'False']:
-						tokens.append((t, prevtoken == 'True'))
-					else:
-						tokens.append((t, ))  # still add a tuple, for type consistency
-				else: # so there were multiple previous candidates and we need to perform a tiebreak
-					for t in list(prevcandidates):
-						if t in KEYWORDS:
-							# this is always the keyword, and not a prefix of an id - otherwise we would not be in len() = 0.
-							if prevtoken == t:
-								tokens.append((t, ))
-								break
-						elif t == 'punct' and prevtoken in PUNCTUATION:
-							# this reason is no longer necessary since we now strict-check
-							# this case only exists when prevtoken is '=', since that overlaps with operator '=='
-							# but now this operator is apparently no longer a candidate for token (since N = 0),
-							# so it must be a punct '=' token
-							tokens.append(('punct', prevtoken))
-							break
-						elif t == 'op' and prevtoken in OPERATORS:
-							tokens.append(('punct', prevtoken))
-							break
-						elif t in METHODS:
-							if prevtoken[1:] == t:
-								tokens.append((t, ))
-								break
-						# integers cannot be completed, otherwise it would not be in len() = 0 (since no other token matched it previously)
-						# so integers cannot exist in a len() = 0 case.  -> NOT TRUE: Int a = [4,5];
-					else: 
-						# all that remains is an id-type this time (as we did not break in any of the if-statements)
-						tokens.append(('id', prevtoken))
-				token = token[-1].strip() 	# restart the next token with the remaining character
-				candidates = list(TOKENTYPES)
-			if c == '':
+			if not token and c == '':
 				break
+			if token in ['//', '/*']:
+				handle_comments(f,token == '/*')
+				token = ''
+				candidates = list(TOKENTYPES)
+			else:
+				update_candidates(candidates, token)
+				if len(candidates) == 0:
+					complete_token(candidates, prevcandidates, token, prevtoken, tokens, f)
+					token = token[-1].strip() 	# restart the next token with the remaining character
+					candidates = list(TOKENTYPES) # and re-enable all candidates
+				if c == '':
+					complete_token(candidates, prevcandidates, token, prevtoken, tokens, f)
+					token = ''
 			# preparing for next iteration
 			prevtoken, prevcandidates = token, list(candidates)
 		print 'Tokens: ',tokens
 		
 def main():
 	scan_spl('../test.spl')
-	
 	
 if __name__ == '__main__':
 	main()

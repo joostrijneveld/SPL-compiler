@@ -1,7 +1,40 @@
-Int facR ( Int n )
+/*Int facL ( Int n)
 {
-if (n < 2 )
-		return 1;
-	else
-		return n * facR ( n - 1 );
+	Int r = 1;
+	while ( n.hd > 1 )
+	{
+		r = r * n;
+		n = n - 1;
+	}
+	return r;
+} 
+
+a == 1
+a = 1
+a >= 2-*/
+/*
+[Void] main()
+{
+	Int n = 0;
+	Int facN = 1;
+	Bool ok = True;
+	while ( n < 20 )
+	{
+		facN = facR ( n );
+		if ( facN != facl ( n ) || facN != facL ( n ))
+		{
+			print (n : facN : facl (n) : facL (n) : []);
+			ok = False
+		}
+		n = n + 1;
+	}
+	print ( ok );
+}*/
+
+(a, a) swap ( (a,a ) tuple )
+{
+	a tmp = tuple.fst;
+	tuple.fst = tuple.snd;
+	tuple.snd = tmp;
+	return tuple;
 }
