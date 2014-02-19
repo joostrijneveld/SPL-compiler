@@ -17,18 +17,18 @@ METHODS = ['hd', 'tl', 'fst', 'snd']
 
 def scan_spl(fname):
 	tokens = []
-	need_char = True
 	with open(fname, 'r') as f:
 		prevcandidates = candidates = list(TOKENTYPES)
 		prevtoken = token = ''
 		while True:
-			if need_char: # while token is empty
-				c = f.read(1)  # do-while hack
-				token += c # TODO: strip whitespace from c
-			need_char = True
+			c = f.read(1)
+			token += c
+			if len(token.strip()) == 0:
+				token = ''
+				continue
 			for t in list(candidates):
 				if t == 'id':
-					if not re.match('^[a-z][a-z0-9_]*$', token, re.IGNORECASE):
+					if not re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
 						candidates.remove(t)
 				if t == 'int':
 					if not token.isdigit():
@@ -88,8 +88,6 @@ def scan_spl(fname):
 						# all that remains is an id-type this time (as we did not break in any of the if-statements)
 						tokens.append(('id', prevtoken))
 				token = token[-1].strip() 	# restart the next token with the remaining character
-											# but strip any whitespace
-				need_char = len(token) == 0
 				candidates = list(TOKENTYPES)
 			if c == '':
 				break
