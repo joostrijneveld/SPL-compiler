@@ -4,7 +4,7 @@ import re
 
 TOKENTYPES = ['id','int','op','punct', 'True', 'False', 'if', 'then',
 'else', 'while', 'return', 'Void', 'Int', 'Bool', 'hd', 'tl', 'fst', 'snd']
-OPERATORS = ['!', '-', '+','-', '*', '/', '%', '==',
+OPERATORS = ['!', '-', '+', '*', '/', '%', '==',
 		'<', '>', '<=', '>=', '!=', '&&', '||', ':']
 PUNCTUATION = [',', ';', '{', '}', '[', ']', '(', ')', '=']
 KEYWORDS = ['True', 'False', 'if', 'then', 'else',
