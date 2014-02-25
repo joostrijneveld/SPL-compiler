@@ -32,31 +32,27 @@ def update_candidates(candidates, token):
 		else:
 			if not t.startswith(token):
 				candidates.remove(t)
-
+				
 def complete_token(candidates, token, tokens, f):
 	if len(candidates) == 1:
-		t = candidates[0]
-		if t == 'id':
-			tokens.append((t, token))
-		elif t == 'int':
-			tokens.append((t, int(token)))
-		else:
-			tokens.append((t, ))  # still add a tuple, for type consistency
-	else: # so there are multiple candidates and we need to perform a tiebreak
+		result = candidates[0]
+	else:
 		for t in list(candidates):
-			if t in LITERALS and token == t:
-				# this is always the keyword, and not a prefix of an id - otherwise we would not be in len() = 0.
-				tokens.append((t, ))
-				break
-			elif t == 'int' and token.isdigit():
-				tokens.append((t, int(token)))
+			if (t in LITERALS and token == t) or (t == 'int' and token.isdigit()):
+				result = t
 				break
 		else:
 			if re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
-				tokens.append(('id', token))
+				result = 'id'
 			else:
 				raise Exception("Unrecognised token: "+token)
-
+	if result == 'id':
+		tokens.append((result, token))
+	elif result == 'int':
+		tokens.append((result, int(token)))
+	else:
+		tokens.append(result)
+		
 def scan_spl(fname):
 	tokens = []
 	with open(fname, 'r') as f:
