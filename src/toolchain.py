@@ -1,10 +1,12 @@
 #! /usr/bin/env python
 
-import parser, scanner
+import sys
+import parser, scanner_literals as scanner
 
 def main():
-	tokens = scanner.scan_spl('../test.spl')
-	parser.build_tree(tokens)
+	tokens = scanner.scan_spl(sys.argv[1])
+	print tokens
+	print parser.build_tree(tokens)
 	
 if __name__ == '__main__':
 	main()
