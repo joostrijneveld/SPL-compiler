@@ -50,6 +50,8 @@ def complete_token(candidates, token, tokens, f):
 		tokens.append((result, token))
 	elif result == 'int':
 		tokens.append((result, int(token)))
+	elif result in ['True', 'False']: #exceptional case for booleans
+		tokens.append(('bool', result == 'True'))
 	else:
 		tokens.append(result)
 		
