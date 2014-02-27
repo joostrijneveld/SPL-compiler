@@ -2,14 +2,14 @@
 
 import re
 
-LITERALS = [
-    'True', 'False',
-    'if', 'then', 'else', 'while', 'return', 'Void', 'Int', 'Bool',
-    '!', '+','-', '*', '/', '%', '==',
-    '<', '>', '<=', '>=', '!=', '&&', '||', ':',',', ';', '{', '}', '[', ']', '(', ')', '=',
-    '.hd', '.tl', '.fst', '.snd']
-
-TOKENTYPES = ['id','int'] + LITERALS
+TOKENTYPES = ['id','int','op','punct', 'True', 'False', 'if', 'then',
+'else', 'while', 'return', 'Void', 'Int', 'Bool', 'hd', 'tl', 'fst', 'snd']
+OPERATORS = ['!', '-', '+', '*', '/', '%', '==',
+		'<', '>', '<=', '>=', '!=', '&&', '||', ':']
+PUNCTUATION = [',', ';', '{', '}', '[', ']', '(', ')', '=']
+KEYWORDS = ['True', 'False', 'if', 'then', 'else',
+			'while', 'return', 'Void', 'Int', 'Bool']
+METHODS = ['hd', 'tl', 'fst', 'snd']
 
 def handle_comments(f, blockcomment):
 	if blockcomment:
@@ -26,35 +26,61 @@ def update_candidates(candidates, token):
 		if t == 'id':
 			if not re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
 				candidates.remove(t)
-		elif t == 'int':
+		if t == 'int':
 			if not token.isdigit():
 				candidates.remove(t)
-		else:
+		if t == 'op':
+			if not any(x.startswith(token) for x in OPERATORS):
+				candidates.remove(t)
+		if t == 'punct':
+			if token not in PUNCTUATION:
+				candidates.remove(t)
+		if t in KEYWORDS:
 			if not t.startswith(token):
 				candidates.remove(t)
-				
+		if t in METHODS:
+			if not token[0] == '.' or not any(x.startswith(token[1:]) for x in METHODS):
+				candidates.remove(t)
+
 def complete_token(candidates, token, tokens, f):
 	if len(candidates) == 1:
-		result = candidates[0]
-	else:
+		t = candidates[0]
+		if t in ['id', 'op', 'punct']:
+			tokens.append((t, token))
+		elif t == 'int':
+			tokens.append((t, int(token)))
+		elif t in ['True', 'False']:
+			tokens.append((t, token == 'True')) # to store the boolean value
+		else:
+			tokens.append((t, ))  # still add a tuple, for type consistency
+	else: # so there are multiple candidates and we need to perform a tiebreak
 		for t in list(candidates):
-			if (t in LITERALS and token == t) or (t == 'int' and token.isdigit()):
-				result = t
+			if t in KEYWORDS and token == t:
+				# this is always the keyword, and not a prefix of an id - otherwise we would not be in len() = 0.
+				tokens.append((t, ))
 				break
+			elif t in METHODS and token[1:] == t:
+				tokens.append((t, ))
+				break
+			elif t == 'punct' and token in PUNCTUATION:
+				# this case only exists when token is '=', since that overlaps with operator '=='
+				# but now this operator is apparently no longer a candidate for token (since #candidates = 0),
+				# so it must be a punct '=' token (as we need to complete it _now_)
+				tokens.append((t, token))
+				break
+			elif t == 'op' and token in OPERATORS:
+				tokens.append((t, token))
+				break
+			elif t == 'int' and token.isdigit():
+				tokens.append((t, int(token)))
+				break
+		# all that remains is an id-type (as we did not break in any of the if-statements)
 		else:
 			if re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
-				result = 'id'
+				tokens.append(('id', token))
 			else:
 				raise Exception("Unrecognised token: "+token)
-	if result == 'id':
-		tokens.append((result, token))
-	elif result == 'int':
-		tokens.append((result, int(token)))
-	elif result in ['True', 'False']: #exceptional case for booleans
-		tokens.append(('bool', result == 'True'))
-	else:
-		tokens.append(result)
-		
+
 def scan_spl(fname):
 	tokens = []
 	with open(fname, 'r') as f:
