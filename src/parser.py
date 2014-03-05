@@ -32,7 +32,7 @@ def build_tree(tokens):
 		tokens.popleft() # pop off the '(' that was tested for in parse_exp_base
 		t_right = parse_exp_args(tokens)
 		if tokens.popleft() != ')': # pop off the ')'
-			raise Exception("Expected ')' but got: "+str(tok))
+			raise Exception("Expected ')' but got: {}".format(tok))
 		return Node(t_left, 'FN', t_right)
 	
 	def parse_exp_base(tokens):
@@ -49,7 +49,7 @@ def build_tree(tokens):
 				tok = tokens.popleft()
 				if tok == ']':
 					return Node(None,'[]', None)
-				raise Exception("Expected ']', but got: "+str(tok))
+				raise Exception("Expected ']', but got: {}".format(tok))
 			elif tok == '(':
 				t_left = parse_exp(tokens)
 				t_right = None
@@ -59,12 +59,12 @@ def build_tree(tokens):
 					tok = tokens.popleft()
 					if tok == ')':
 						return Node(t_left, '@', t_right)
-					raise Exception("Expected ')', but got: "+str(tok))
+					raise Exception("Expected ')', but got: {}".format(tok))
 				elif tok == ')':
 					if not t_right:
 						return t_left
-				raise Exception("Expected ')' or ',', but got: "+str(tok))
-			raise Exception("Expected new term, but got: "+str(tok))
+				raise Exception("Expected ')' or ',', but got: {}".format(tok))
+			raise Exception("Expected new term, but got: {}".format(tok))
 		except IndexError:
 			raise Exception("Unfinished term, but ran out of tokens.")
 
@@ -104,7 +104,7 @@ def build_tree(tokens):
 	tokens = deque(tokens) # to allow popleft
 	tree = parse_exp(tokens)
 	if tokens:
-		raise Exception("Done parsing, but there are still tokens remaining. Next token: "+str(tokens[0]))
+		raise Exception("Done parsing, but there are still tokens remaining. Next token: {}".format(tokens[0]))
 	return tree
 
 def main():
