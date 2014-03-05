@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import sys
-import parser, scanner_literals as scanner
+import parser, scanner
 
 def main():
 	tokens = scanner.scan_spl(sys.argv[1])

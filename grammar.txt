@@ -1,4 +1,8 @@
-
+Type 	= "Int"
+		| "Bool"
+		| "(" Type "," Type ")"
+		| "[" Type "]"
+		| id
 
 Stmt	= "{" Stmt* "}"
 		| "if" "(" Exp ")" Stmt [ "else" Stmt ]
