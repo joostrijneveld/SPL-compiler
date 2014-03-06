@@ -17,6 +17,7 @@
 // }
 // foo(1,2,3,(4,5));
 // [[[([[Int]] , a)]]]
+
 Void foobar(Int a, Bool flag) {
 	Int a = 2;
 	Int b = 2;
@@ -24,6 +25,10 @@ Void foobar(Int a, Bool flag) {
 	a = 1;
 	b = 2;
 	c = 3;
+}
+
+Int bar([Bool] n) {
+	c = 6 * 9;
 }
 
 // foobar = 1;

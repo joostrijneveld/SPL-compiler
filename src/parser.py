@@ -6,15 +6,14 @@ from functools import partial
 class Node:
 	def __init__(self, val, *children):
 		self.val = val
-		self.children = filter(lambda x : x != None, children)
+		# self.children = filter(lambda x : x != None, children)
+		self.children = children
 		
 	def __repr__(self, depth = 0):
 		ret = ''
 		ret += "\t"*depth+repr(self.val)+"\n"
-		for c in self.children[:len(self.children)/2]:
-			ret += c.__repr__(depth + 1)
-		for c in self.children[len(self.children)/2:]:
-			ret += c.__repr__(depth + 1)
+		for c in self.children:
+			ret += c.__repr__(depth + 1) if c else "\t"*(depth+1)+c.__repr__()+"\n"
 		return ret
 
 def pop_literal_token(tokens, literal):
@@ -23,8 +22,23 @@ def pop_literal_token(tokens, literal):
 		raise Exception("Expected '{}', but got: {}".format(literal, tok))
 	return tok
 
-def parse_vardecl(tokens):
+def parse_spl(tokens):
+	if not tokens:
+		return None	
+	return Node('Decl', parse_decl(tokens), parse_spl(tokens))	
+
+def parse_decl(tokens):
+	if tokens[0] == 'Void': # which immediately implies a FunDecl
+		tokens.popleft()
+		return parse_fundecl(Node('Void'), tokens)
 	t = parse_type(tokens)
+	if tokens[1] == '=': # so we're actually in a VarDecl
+		return parse_vardecl(tokens, t)
+	return parse_fundecl(t, tokens)
+		
+def parse_vardecl(tokens, t = None):
+	if not t:
+		t = parse_type(tokens)
 	varname = tokens.popleft()
 	if type(varname) is not tuple or varname[0] != 'id':
 		raise Exception("Expected id, but got: {}".format(tokens[0]))
@@ -36,17 +50,23 @@ def parse_vardecl(tokens):
 def start_of_vardecl(tokens):
 	if tokens[0] in ['Int', 'Bool', '(', '[']:
 		return True
-	elif tokens[0] is tuple and tokens[0][0] == 'id':
-		return tokens[1] is tuple and tokens[1][0] == 'id'
+	elif type(tokens[0]) is tuple and tokens[0][0] == 'id':
+		return type(tokens[1]) is tuple and tokens[1][0] == 'id'
 	return False
-	
-def parse_fundecl(tokens):
-	rettype = parse_rettype(tokens)
+
+def parse_vardecl_list(tokens):
+	if not start_of_vardecl(tokens):
+		return None
+	return Node(';', parse_vardecl(tokens), parse_vardecl_list(tokens))	
+
+def parse_fundecl(rettype, tokens):
 	if type(tokens[0]) is not tuple or tokens[0][0] != 'id':
 		raise Exception("Expected id, but got: {}".format(tokens[0]))
 	funname = Node(tokens.popleft())
 	pop_literal_token(tokens, '(')
-	fargs = parse_fargs(tokens)
+	fargs = None
+	if tokens[0] != ')':
+		fargs = parse_fargs(tokens)
 	pop_literal_token(tokens, ')')
 	pop_literal_token(tokens, '{')
 	vardecls = parse_vardecl_list(tokens)
@@ -56,15 +76,9 @@ def parse_fundecl(tokens):
 	pop_literal_token(tokens, '}')
 	return Node('FunDecl', rettype, funname, fargs, vardecls, stmts)
 
-def parse_rettype(tokens):
-	if tokens[0] == 'Void':
-		tokens.popleft()
-		return Node('Void')
-	return parse_type(tokens)
-
 def parse_type(tokens):
 	tok = tokens.popleft()
-	if tok in ['Int', 'Bool'] or tok[0] is tuple and tok[0] == 'id':
+	if tok in ['Int', 'Bool'] or type(tok) is tuple and tok[0] == 'id':
 		return Node(tok)
 	if tok == '(':
 		t_left = parse_type(tokens)
@@ -77,11 +91,6 @@ def parse_type(tokens):
 		pop_literal_token(tokens,']')
 		return Node('[]', t_left)
 	raise Exception("Expected new type but got: {}".format(tok))
-
-def parse_vardecl_list(tokens):
-	if not start_of_vardecl(tokens):
-		return None
-	return Node(';', parse_vardecl(tokens), parse_vardecl_list(tokens))	
 		
 def parse_stmt_list(tokens):
 	if tokens[0] == '}':
@@ -229,10 +238,12 @@ parse_exp 		= parse_exp_or
 def build_tree(tokens):
 	tokens = deque(tokens) # to allow popleft
 	try:
-		tree = parse_fundecl(tokens)
+		tree = parse_spl(tokens)
 		# tree = parse_stmt(tokens)
 	except IndexError:
 		raise Exception("Unfinished expression, but ran out of tokens.")
+	if not tree:
+		raise Exception("Unable to parse: program is empty?")
 	# tree = parse_exp(tokens)
 	if tokens:
 		raise Exception("Done parsing, but there are still tokens remaining. Next token: {}".format(tokens[0]))

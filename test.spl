@@ -1,4 +1,4 @@
-/*Int facL ( Int n)
+Int facL ( Int n)
 {
 	Int r = 1;
 	while ( n.hd > 1 )
@@ -9,11 +9,8 @@
 	return r;
 } 
 
-a == 1
-a = 1
-a >= 2-*/
-/*
-[Void] main()
+
+[Bool] main()
 {
 	Int n = 0;
 	Int facN = 1;
@@ -24,16 +21,17 @@ a >= 2-*/
 		if ( facN != facl ( n ) || facN != facL ( n ))
 		{
 			print (n : facN : facl (n) : facL (n) : []);
-			ok = False
+			ok = False;
 		}
 		n = n + 1;
 	}
 	print ( ok );
-}*/
+}
 
-(a, a) swap ( (a,a ) tuple )
+(a, b) swap ( (c, d) tuple )
 {
 	a tmp = tuple.fst;
+	c = 1;
 	tuple.fst = tuple.snd;
 	tuple.snd = tmp;
 	return tuple;

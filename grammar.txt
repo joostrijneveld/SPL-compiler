@@ -1,9 +1,10 @@
+Decl 	= VarDecl
+		| FunDecl
+
 VarDecl = Type id "=" Exp ";"
 
-FunDecl = RetType id "(" [ Fargs ] ")" "{" VarDecl* Stmt+ "}"
-
-RetType = "Void"
-		| Type
+FunDecl = "Void" id "(" [ Fargs ] ")" "{" VarDecl* Stmt+ "}"
+		| Type id "(" [ Fargs ] ")" "{" VarDecl* Stmt+ "}"
 				
 Type 	= "Int"
 		| "Bool"
