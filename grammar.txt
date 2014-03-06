@@ -1,9 +1,18 @@
+VarDecl = Type id "=" Exp ";"
+
+FunDecl = RetType id "(" [ Fargs ] ")" "{" VarDecl* Stmt+ "}"
+
+RetType = "Void"
+		| Type
+				
 Type 	= "Int"
 		| "Bool"
 		| "(" Type "," Type ")"
 		| "[" Type "]"
 		| id
-
+		
+Fargs 	= Type id [ "," Fargs ]
+		
 Stmt	= "{" Stmt* "}"
 		| "if" "(" Exp ")" Stmt [ "else" Stmt ]
 		| "while" "(" Exp ")" Stmt
@@ -31,7 +40,7 @@ ExpBase	= ExpField
 		| "(" Exp "," Exp ")"
 ExpField  = id (".hd" | ".tl" | ".fst" | ".snd")*
 ExpFunc	= id "(" [ ExpArgs ] ")"
-ExpArgs	= Exp ("," Exp)*
+ExpArgs	= Exp [ "," ExpArgs ]
 
 --the parser does not use this since the scanner already makes this distinction
 

@@ -6,13 +6,13 @@ from functools import partial
 class Node:
 	def __init__(self, val, *children):
 		self.val = val
-		self.children = filter(lambda x: x != None, children)
+		self.children = filter(lambda x : x != None, children)
 		
 	def __repr__(self, depth = 0):
 		ret = ''
+		ret += "\t"*depth+repr(self.val)+"\n"
 		for c in self.children[:len(self.children)/2]:
 			ret += c.__repr__(depth + 1)
-		ret += "\t"*depth+repr(self.val)+"\n"
 		for c in self.children[len(self.children)/2:]:
 			ret += c.__repr__(depth + 1)
 		return ret
@@ -20,25 +20,78 @@ class Node:
 def pop_literal_token(tokens, literal):
 	tok = tokens.popleft()
 	if tok != literal:
-		raise Exception("Expected '{}' but got: {}".format(literal, tok))
+		raise Exception("Expected '{}', but got: {}".format(literal, tok))
 	return tok
 
-def parse_type(tokens):
-	pass
+def parse_vardecl(tokens):
+	t = parse_type(tokens)
+	varname = tokens.popleft()
+	if type(varname) is not tuple or varname[0] != 'id':
+		raise Exception("Expected id, but got: {}".format(tokens[0]))
+	pop_literal_token(tokens, '=')
+	exp = parse_exp(tokens)
+	pop_literal_token(tokens, ';')
+	return Node('VarDecl', t, Node(varname), exp)
 
+def start_of_vardecl(tokens):
+	if tokens[0] in ['Int', 'Bool', '(', '[']:
+		return True
+	elif tokens[0] is tuple and tokens[0][0] == 'id':
+		return tokens[1] is tuple and tokens[1][0] == 'id'
+	return False
+	
+def parse_fundecl(tokens):
+	rettype = parse_rettype(tokens)
+	if type(tokens[0]) is not tuple or tokens[0][0] != 'id':
+		raise Exception("Expected id, but got: {}".format(tokens[0]))
+	funname = Node(tokens.popleft())
+	pop_literal_token(tokens, '(')
+	fargs = parse_fargs(tokens)
+	pop_literal_token(tokens, ')')
+	pop_literal_token(tokens, '{')
+	vardecls = parse_vardecl_list(tokens)
+	stmts = parse_stmt_list(tokens)
+	if not stmts:
+		raise Exception("Expected statement, but got: {}".format(tokens[0]))
+	pop_literal_token(tokens, '}')
+	return Node('FunDecl', rettype, funname, fargs, vardecls, stmts)
+
+def parse_rettype(tokens):
+	if tokens[0] == 'Void':
+		tokens.popleft()
+		return Node('Void')
+	return parse_type(tokens)
+
+def parse_type(tokens):
+	tok = tokens.popleft()
+	if tok in ['Int', 'Bool'] or tok[0] is tuple and tok[0] == 'id':
+		return Node(tok)
+	if tok == '(':
+		t_left = parse_type(tokens)
+		pop_literal_token(tokens,',')
+		t_right = parse_type(tokens)
+		pop_literal_token(tokens,')')
+		return Node(',', t_left, t_right)
+	if tok == '[':
+		t_left = parse_type(tokens)
+		pop_literal_token(tokens,']')
+		return Node('[]', t_left)
+	raise Exception("Expected new type but got: {}".format(tok))
+
+def parse_vardecl_list(tokens):
+	if not start_of_vardecl(tokens):
+		return None
+	return Node(';', parse_vardecl(tokens), parse_vardecl_list(tokens))	
+		
 def parse_stmt_list(tokens):
 	if tokens[0] == '}':
 		return None
-	stmt = parse_stmt(tokens)
-	stmt_list = parse_stmt_list(tokens)
-	if stmt_list: # to make sure the last statement is not alone in a ';'-node
-		return Node(';', stmt, stmt_list)
-	return stmt
+	return Node(';', parse_stmt(tokens), parse_stmt_list(tokens))
 
 def parse_stmt(tokens):
 	try:
 		tok = tokens.popleft()
-		if tok[0] == 'id':
+		if type(tok) is tuple and tok[0] == 'id':
 			if tokens[0] == '(': # for ExpFunc
 				result = parse_exp_func(tok, tokens)
 			else: # for ExpField
@@ -86,19 +139,38 @@ def parse_exp_field(id_tok, tokens):
 def parse_exp_func(id_tok, tokens):
 	t_left = Node(id_tok)
 	pop_literal_token(tokens, '(') # pop off the '(' that was tested for in parse_exp_base
-	t_right = parse_exp_args(tokens)
+	t_right = None
+	if tokens[0] != ')':
+		t_right = parse_exp_args(tokens)
 	pop_literal_token(tokens, ')')
-	return Node('FN', t_left, t_right)
+	return Node('FunCall', t_left, t_right)
+
+def parse_exp_args(tokens):
+	t_left = parse_exp(tokens)
+	if tokens[0] == ',':
+		tokens.popleft()
+		return Node(',', t_left, parse_exp_args(tokens))
+	return Node(',', t_left)
+
+def parse_fargs(tokens):
+	argtype = parse_type(tokens)
+	argname = tokens.popleft()
+	if type(argname) is not tuple or argname[0] != 'id':
+		raise Exception("Expected id, but got: {}".format(tokens[0]))
+	if tokens[0] == ',':
+		tokens.popleft()
+		return Node(',', argtype, Node(argname), parse_fargs(tokens))
+	return Node(',', argtype, Node(argname))
 
 def parse_exp_base(tokens):
 	# Parses the first expression from tokens and returns it as a parse tree
 	tok = tokens.popleft()
-	if tok[0] == 'id':
+	if type(tok) is tuple and tok[0] == 'id':
 		if tokens[0] == '(': # for ExpFunc
 			result = parse_exp_func(tok, tokens)
 			return result
 		return parse_exp_field(tok, tokens)
-	elif tok[0] in ['int', 'bool']:
+	elif type(tok) is tuple and tok[0] in ['int', 'bool']:
 		return Node(tok)
 	elif tok == '[':
 		tok = tokens.popleft()
@@ -113,7 +185,7 @@ def parse_exp_base(tokens):
 			t_right = parse_exp(tokens)
 			tok = tokens.popleft()
 			if tok == ')':
-				return Node('@', t_left, t_right)
+				return Node(',', t_left, t_right)
 			raise Exception("Expected ')', but got: {}".format(tok))
 		elif tok == ')':
 			if not t_right:
@@ -134,7 +206,7 @@ def parse_exp_con(tokens):
 		tok = tokens.popleft()
 		return Node(tok, t, parse_exp_con(tokens))
 	return t
-
+	
 def tail_recursion(fn, ops, tokens):
 	# fn is a function for the recursive descent
 	# ops are the operators that should be matched on
@@ -153,12 +225,12 @@ parse_exp_eq 	= partial(tail_recursion, parse_exp_cmp, ['==','!='])
 parse_exp_and 	= partial(tail_recursion, parse_exp_eq, ['&&'])
 parse_exp_or 	= partial(tail_recursion, parse_exp_and, ['||'])
 parse_exp 		= parse_exp_or
-parse_exp_args	= partial(tail_recursion, parse_exp, [','])
 
 def build_tree(tokens):
 	tokens = deque(tokens) # to allow popleft
 	try:
-		tree = parse_stmt(tokens)
+		tree = parse_fundecl(tokens)
+		# tree = parse_stmt(tokens)
 	except IndexError:
 		raise Exception("Unfinished expression, but ran out of tokens.")
 	# tree = parse_exp(tokens)
