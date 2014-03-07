@@ -6,7 +6,6 @@ from functools import partial
 class Node:
 	def __init__(self, val, *children):
 		self.val = val
-		# self.children = filter(lambda x : x != None, children)
 		self.children = children
 		
 	def __repr__(self, depth = 0):
@@ -205,7 +204,6 @@ def parse_exp_base(tokens):
 		raise Exception("Expected ')' or ',', but got: {}".format(tok))
 	raise Exception("Expected new expression, but got: {}".format(tok))
 
-
 def parse_exp_un(tokens):
 	if tokens and tokens[0] in ['-', '!']:
 		tok = tokens.popleft()
@@ -242,12 +240,10 @@ def build_tree(tokens):
 	tokens = deque(tokens) # to allow popleft
 	try:
 		tree = parse_spl(tokens)
-		# tree = parse_stmt(tokens)
 	except IndexError:
 		raise Exception("Unfinished expression, but ran out of tokens.")
 	if not tree:
 		raise Exception("Unable to parse: program is empty?")
-	# tree = parse_exp(tokens)
 	if tokens:
 		raise Exception("Done parsing, but there are still tokens remaining. Next token: {}".format(tokens[0]))
 	return tree
