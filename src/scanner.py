@@ -12,15 +12,39 @@ LITERALS = [
 
 TOKENTYPES = ['id','int'] + LITERALS
 
+class Token:
+	def __init__(self, val, line, col):
+		self.val = val
+		self.line = line
+		self.col = col
+		
+	def __repr__(self):
+		return str(self.val) + ':' + str(self.line) + ':' + str(self.col)
+
+class Position:
+	def __init__(self):
+		self.line = self.col = self.prevcol = 1
+	
+	def nextline(self):
+		self.prevcol = 1
+		self.col = 1
+		self.line += 1
+	
+	def tokpos(self):
+		result, self.prevcol = self.prevcol, self.col
+		return result
+		
 def handle_comments(f, blockcomment):
 	if blockcomment:
 		last_two = ''
 		while last_two != '*/':
 			c = f.read(1)
+			p.col += 1
 			last_two += c
 			last_two = last_two[-2:]
 	else:
 		f.readline()
+		p.nextline()
 
 def update_candidates(candidates, token):
 	for t in list(candidates):
@@ -34,7 +58,7 @@ def update_candidates(candidates, token):
 			if not t.startswith(token):
 				candidates.remove(t)
 				
-def complete_token(candidates, token, tokens, f):
+def complete_token(candidates, token, tokens, p):
 	if len(candidates) == 1:
 		result = candidates[0]
 	else:
@@ -48,36 +72,42 @@ def complete_token(candidates, token, tokens, f):
 			else:
 				raise Exception("Unrecognised token: "+token)
 	if result == 'id':
-		tokens.append((result, token))
+		tokens.append(Token((result, token), p.line, p.tokpos()))
 	elif result == 'int':
-		tokens.append((result, int(token)))
+		tokens.append(Token((result, int(token)), p.line, p.tokpos()))
 	elif result in ['True', 'False']: #exceptional case for booleans
-		tokens.append(('bool', result == 'True'))
+		tokens.append(Token(('bool', result == 'True'), p.line, p.tokpos()))
 	else:
-		tokens.append(result)
+		tokens.append(Token(result, p.line, p.tokpos()))
 		
 def scan_spl(fname):
 	tokens = []
+	p = Position()
 	with open(fname, 'r') as f:
 		prevcandidates = candidates = list(TOKENTYPES)
 		prevtoken = token = ''
 		while True:
 			c = f.read(1)
+			p.col += 1
 			if not c:  # no more chars to read
 				if token:
-					complete_token(candidates, token, tokens, f)
+					complete_token(candidates, token, tokens, p)
 				break
 			elif not token and not c.strip():
+				if c == '\n':
+					p.nextline()
 				continue  # no token, and the next char is whitespace => skip!
 			token += c
 			if token in ['//', '/*']:
-				handle_comments(f, token == '/*')
+				handle_comments(f, token == '/*', p)
 				token = ''
 				candidates = list(TOKENTYPES)
 			else:
 				update_candidates(candidates, token)
 				if not candidates: # so if the current token is not valid
-					complete_token(prevcandidates, prevtoken, tokens, f)
+					complete_token(prevcandidates, prevtoken, tokens, p)
+					if token[-1] == '\n':
+						p.nextline()
 					token = token[-1].strip()  # start the next token with the invalidating character
 					candidates = list(TOKENTYPES) # and re-instantiate all candidates
 			# prepare for next iteration
