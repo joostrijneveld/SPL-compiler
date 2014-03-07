@@ -22,6 +22,15 @@ def pop_literal_token(tokens, literal):
 		raise Exception("Expected '{}', but got: {}".format(literal, tok))
 	return tok
 
+def is_id(tok):
+	return type(tok) is tuple and tok[0] == 'id'
+
+def pop_id(tokens):
+	tok = tokens.popleft()
+	if not is_id(tok):
+		raise Exception("Expected id, but got: {}".format(tok))
+	return tok
+
 def parse_spl(tokens):
 	if not tokens:
 		return None	
@@ -39,9 +48,7 @@ def parse_decl(tokens):
 def parse_vardecl(tokens, t = None):
 	if not t:
 		t = parse_type(tokens)
-	varname = tokens.popleft()
-	if type(varname) is not tuple or varname[0] != 'id':
-		raise Exception("Expected id, but got: {}".format(tokens[0]))
+	varname = pop_id(tokens)
 	pop_literal_token(tokens, '=')
 	exp = parse_exp(tokens)
 	pop_literal_token(tokens, ';')
@@ -50,8 +57,8 @@ def parse_vardecl(tokens, t = None):
 def start_of_vardecl(tokens):
 	if tokens[0] in ['Int', 'Bool', '(', '[']:
 		return True
-	elif type(tokens[0]) is tuple and tokens[0][0] == 'id':
-		return type(tokens[1]) is tuple and tokens[1][0] == 'id'
+	elif is_id(tokens[0]):
+		return is_id(tokens[1])
 	return False
 
 def parse_vardecl_list(tokens):
@@ -60,9 +67,7 @@ def parse_vardecl_list(tokens):
 	return Node(';', parse_vardecl(tokens), parse_vardecl_list(tokens))	
 
 def parse_fundecl(rettype, tokens):
-	if type(tokens[0]) is not tuple or tokens[0][0] != 'id':
-		raise Exception("Expected id, but got: {}".format(tokens[0]))
-	funname = Node(tokens.popleft())
+	funname = pop_id(tokens)
 	pop_literal_token(tokens, '(')
 	fargs = None
 	if tokens[0] != ')':
@@ -74,11 +79,11 @@ def parse_fundecl(rettype, tokens):
 	if not stmts:
 		raise Exception("Expected statement, but got: {}".format(tokens[0]))
 	pop_literal_token(tokens, '}')
-	return Node('FunDecl', rettype, funname, fargs, vardecls, stmts)
+	return Node('FunDecl', rettype, Node(funname), fargs, vardecls, stmts)
 
 def parse_type(tokens):
 	tok = tokens.popleft()
-	if tok in ['Int', 'Bool'] or type(tok) is tuple and tok[0] == 'id':
+	if tok in ['Int', 'Bool'] or is_id(tok):
 		return Node(tok)
 	if tok == '(':
 		t_left = parse_type(tokens)
@@ -100,7 +105,7 @@ def parse_stmt_list(tokens):
 def parse_stmt(tokens):
 	try:
 		tok = tokens.popleft()
-		if type(tok) is tuple and tok[0] == 'id':
+		if is_id(tok):
 			if tokens[0] == '(': # for ExpFunc
 				result = parse_exp_func(tok, tokens)
 			else: # for ExpField
@@ -117,7 +122,7 @@ def parse_stmt(tokens):
 			if tokens and tokens[0] == 'else': # optional else
 				tokens.popleft()
 				return Node('if', condition, if_stmt, parse_stmt(tokens))
-			return Node('if', condition, if_stmt)
+			return Node('if', condition, if_stmt, None)
 		elif tok == 'while':
 			pop_literal_token(tokens, '(')
 			condition = parse_exp(tokens)
@@ -126,7 +131,7 @@ def parse_stmt(tokens):
 		elif tok == 'return':
 			if tokens[0] == ';':
 				pop_literal_token(tokens, ';')
-				return Node('return')
+				return Node('return', None)
 			result = parse_exp(tokens)
 			pop_literal_token(tokens, ';')
 			return Node('return', result)
@@ -159,22 +164,20 @@ def parse_exp_args(tokens):
 	if tokens[0] == ',':
 		tokens.popleft()
 		return Node(',', t_left, parse_exp_args(tokens))
-	return Node(',', t_left)
+	return Node(',', t_left, None)
 
 def parse_fargs(tokens):
 	argtype = parse_type(tokens)
-	argname = tokens.popleft()
-	if type(argname) is not tuple or argname[0] != 'id':
-		raise Exception("Expected id, but got: {}".format(tokens[0]))
+	argname = pop_id(tokens)
 	if tokens[0] == ',':
 		tokens.popleft()
 		return Node(',', argtype, Node(argname), parse_fargs(tokens))
-	return Node(',', argtype, Node(argname))
+	return Node(',', argtype, Node(argname), None)
 
 def parse_exp_base(tokens):
 	# Parses the first expression from tokens and returns it as a parse tree
 	tok = tokens.popleft()
-	if type(tok) is tuple and tok[0] == 'id':
+	if is_id(tok):
 		if tokens[0] == '(': # for ExpFunc
 			result = parse_exp_func(tok, tokens)
 			return result

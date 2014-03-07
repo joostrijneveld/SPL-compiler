@@ -9,7 +9,6 @@ Int facL ( Int n)
 	return r;
 } 
 
-
 [Bool] main()
 {
 	Int n = 0;
@@ -24,6 +23,7 @@ Int facL ( Int n)
 			ok = False;
 		}
 		n = n + 1;
+		foo();
 	}
 	print ( ok );
 }
