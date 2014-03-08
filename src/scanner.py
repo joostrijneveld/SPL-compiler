@@ -18,7 +18,7 @@ class Token:
 		self.col = col
 		self.type = type
 		self.val = val
-		
+
 	def __repr__(self):
 		return self.type + ('['+str(self.val)+']' if self.val else '') +' ' \
 				+ str(self.line) + ':' + str(self.col)
@@ -28,8 +28,7 @@ class Position:
 		self.line = self.col = self.prevcol = 1
 	
 	def nextline(self):
-		self.prevcol = 1
-		self.col = 1
+		self.prevcol = self.col =  1
 		self.line += 1
 	
 	def tokpos(self):
@@ -119,21 +118,7 @@ def scan_spl(fname):
 			prevtoken, prevcandidates = token, list(candidates)
 	return tokens
 	
-# Test en werkt: Int a.hd() = 5;
-
-
-# Truee
-# 
-# true/then  (of id)
-
-# 
-
-
-# int i = 5;
-# <id, 'int'>, (str, 'i'), (str, =), (int, 5)
-
 # tokens types:
-
 # id 			alpha ('_' | alphanum)*
 # int 			['-'] digit+
 # Op1			!, -
@@ -166,9 +151,3 @@ def scan_spl(fname):
 # als het lijstje na een ronde 1 element bevat is het sowieso deze, maar gaan we door tot 'ie niet meer kan
 # als het lijstje na een ronde >=2 elementen bevat moet je nog een keer
 # als het lijstje na een ronde 0 elementen bevat moet je het vorige lijstje pakken en een tiebreak doen
-
-
-# foo.
-# hd
-
-# <id, foo> <hd> 
