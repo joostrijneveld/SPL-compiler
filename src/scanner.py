@@ -118,13 +118,6 @@ def scan_spl(fname):
 			# prepare for next iteration
 			prevtoken, prevcandidates = token, list(candidates)
 	return tokens
-		
-def main():
-	print 'Tokens: ', scan_spl('../test.spl')
-	
-if __name__ == '__main__':
-	main()
-	
 	
 # Test en werkt: Int a.hd() = 5;
 

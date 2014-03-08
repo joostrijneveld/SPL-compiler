@@ -227,13 +227,6 @@ def build_tree(tokens):
 	if tokens:
 		raise Exception("Done parsing, but there are still tokens remaining. Next token: {}".format(tokens[0].type))
 	return tree
-
-def main():
-	pass
-	
-if __name__ == '__main__':
-	main()
-	
 	
 # design choices:
 # for tuples, the comma is overloaded as it also defines function calls, so cannot be the value of a node.
