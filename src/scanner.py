@@ -4,7 +4,7 @@ import re
 
 LITERALS = [
     'True', 'False',
-    'if', 'then', 'else', 'while', 'return', 'Void', 'Int', 'Bool',
+    'if', 'then', 'else', 'while', 'return', 'Void', 'Int', 'Bool', '[]',
     '!', '-', '+', '*', '/', '%', ':', '&&', '||',
     '==', '<', '>', '<=', '>=', '!=',
     ',', ';', '{', '}', '[', ']', '(', ')', '=',
@@ -13,13 +13,15 @@ LITERALS = [
 TOKENTYPES = ['id','int'] + LITERALS
 
 class Token:
-	def __init__(self, val, line, col):
-		self.val = val
+	def __init__(self, line, col, type, val=None):
 		self.line = line
 		self.col = col
+		self.type = type
+		self.val = val
 		
 	def __repr__(self):
-		return str(self.val) + ':' + str(self.line) + ':' + str(self.col)
+		return self.type + ('['+str(self.val)+']' if self.val else '') +' ' \
+				+ str(self.line) + ':' + str(self.col)
 
 class Position:
 	def __init__(self):
@@ -34,12 +36,14 @@ class Position:
 		result, self.prevcol = self.prevcol, self.col
 		return result
 		
-def handle_comments(f, blockcomment):
+def handle_comments(f, blockcomment, p):
 	if blockcomment:
 		last_two = ''
 		while last_two != '*/':
 			c = f.read(1)
 			p.col += 1
+			if c == '\n':
+				p.nextline()
 			last_two += c
 			last_two = last_two[-2:]
 	else:
@@ -72,13 +76,13 @@ def complete_token(candidates, token, tokens, p):
 			else:
 				raise Exception("Unrecognised token: "+token)
 	if result == 'id':
-		tokens.append(Token((result, token), p.line, p.tokpos()))
+		tokens.append(Token(p.line, p.tokpos(), result, token))
 	elif result == 'int':
-		tokens.append(Token((result, int(token)), p.line, p.tokpos()))
+		tokens.append(Token(p.line, p.tokpos(), result, int(token)))
 	elif result in ['True', 'False']: #exceptional case for booleans
-		tokens.append(Token(('bool', result == 'True'), p.line, p.tokpos()))
+		tokens.append(Token(p.line, p.tokpos(), 'bool', result == 'True'))
 	else:
-		tokens.append(Token(result, p.line, p.tokpos()))
+		tokens.append(Token(p.line, p.tokpos(), result))
 		
 def scan_spl(fname):
 	tokens = []
@@ -94,6 +98,7 @@ def scan_spl(fname):
 					complete_token(candidates, token, tokens, p)
 				break
 			elif not token and not c.strip():
+				p.tokpos()
 				if c == '\n':
 					p.nextline()
 				continue  # no token, and the next char is whitespace => skip!

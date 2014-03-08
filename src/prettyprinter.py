@@ -7,7 +7,7 @@ def out(s, tabs=0):
 	stdout.write('\t'*tabs + s)
 
 def print_decl(tree, depth=0):
-	if tree.val == 'VarDecl':
+	if tree.tok == 'VarDecl':
 		print_vardecl(tree)
 	else:
 		print_fundecl(tree)
@@ -15,13 +15,13 @@ def print_decl(tree, depth=0):
 def print_vardecl(tree, depth=0):
 	out('', depth)
 	print_type(tree.children[0])
-	out(' '+tree.children[1].val[1]+' = ')
+	out(' '+tree.children[1].tok.val+' = ')
 	print_exp(tree.children[2])
 	out(';\n')
 	
 def print_fundecl(tree):
 	print_rettype(tree.children[0])
-	out(' '+tree.children[1].val[1]+'(')
+	out(' '+tree.children[1].tok.val+'(')
 	if tree.children[2]:
 		print_fargs(tree.children[2])
 	out(')\n{\n')
@@ -32,65 +32,65 @@ def print_fundecl(tree):
 	
 def print_fargs(tree):
 	print_type(tree.children[0])
-	out(' '+tree.children[1].val[1])
+	out(' '+tree.children[1].tok.val)
 	if tree.children[2]:
 		out(', ')
 		print_fargs(tree.children[2])
 	
 def print_rettype(tree):
-	if tree.val == 'Void':
+	if tree.tok.type == 'Void':
 		out('Void')
 	else:
 		print_type(tree)
 		
 def print_type(tree):
-	if tree.val in ['Int', 'Bool']:
-		out(tree.val)
-	elif type(tree.val) is tuple and tree.val[0] == 'id':
-		out(tree.val[1])
-	elif tree.val == ',':
+	if tree.tok.type in ['Int', 'Bool']:
+		out(tree.tok.type)
+	elif tree.tok.type == 'id':
+		out(tree.tok.val)
+	elif tree.tok.type == ',':
 		out('(')
 		print_type(tree.children[0])
 		out(',')
 		print_type(tree.children[1])
 		out(')')
-	elif tree.val == '[]':
+	elif tree.tok.type == '[':
 		out('[')
 		print_type(tree.children[0])
 		out(']')
 		
 def print_stmt(tree, depth):
-	if tree.val == '{}':
+	if tree.tok == 'Scope':
 		out('{\n', depth)
 		if tree.children[0]:
 			print_stmt_list(tree.children[0], depth+1)
 		out('}\n', depth)
-	elif tree.val == 'if':
+	elif tree.tok == 'FunCall':
+		out(tree.children[0].tok.val, depth)
+		out('(')
+		if tree.children[1]:
+			print_act_args(tree.children[1])
+		out(');\n')
+	elif tree.tok.type == 'if':
 		out('if (', depth)
 		print_exp(tree.children[0])
 		out(')\n')
-		print_stmt(tree.children[1], depth + int(tree.children[1].val != '{}'))
+		print_stmt(tree.children[1], depth + int(tree.children[1].tok != '{}'))
 		if tree.children[2]:
 			out('else\n', depth)
-			print_stmt(tree.children[2], depth + int(tree.children[1].val != '{}'))
-	elif tree.val == 'while':
+			print_stmt(tree.children[2], depth + int(tree.children[1].tok != '{}'))
+	elif tree.tok.type == 'while':
 		out('while (', depth)
 		print_exp(tree.children[0])
 		out(')\n')
-		print_stmt(tree.children[1], depth + int(tree.children[1].val != '{}'))
-	elif tree.val == '=':
+		print_stmt(tree.children[1], depth + int(tree.children[1].tok != '{}'))
+	elif tree.tok.type == '=':
 		out('', depth)
 		print_field(tree.children[0])
 		out(' = ')
 		print_exp(tree.children[1])
 		out(';\n')
-	elif tree.val == 'FunCall':
-		out(tree.children[0].val[1], depth)
-		out('(')
-		if tree.children[1]:
-			print_act_args(tree.children[1])
-		out(');\n')
-	elif tree.val == 'return':
+	elif tree.tok.type == 'return':
 		out('return', depth)
 		if tree.children[0]:
 			out(' ')
@@ -98,32 +98,30 @@ def print_stmt(tree, depth):
 		out(';\n')
 		
 def print_exp(tree):
-	if tree.val in ['!', '-'] and len(tree.children) == 1:
-		out(tree.val)
-		print_exp(tree.children[0])
-	elif tree.val in ['-', '+', '*', '/', '%', ':',
-					  '&&', '||', '==', '<', '>', '<=', '>=', '!=']:
-		out('(')
-		print_exp(tree.children[0])
-		out(' '+tree.val+' ')
-		print_exp(tree.children[1])
-		out(')')
-	elif tree.val[0] == 'int':
-		out(str(tree.val[1]))
-	elif tree.val[0] == 'bool':
-		out(str(tree.val[1]))
-	elif tree.val == 'FunCall':
-		out(tree.children[0].val[1])
+	if tree.tok == 'FunCall':
+		out(tree.children[0].tok.val)
 		out('(')
 		if tree.children[1]:
 			print_act_args(tree.children[1])
 		out(')')
-	elif tree.val in ['.hd', '.tl', '.fst', '.snd'] \
-		or type(tree.val) is tuple and tree.val[0] == 'id':
+	elif tree.tok.type in ['!', '-'] and len(tree.children) == 1:
+		out(tree.tok.type)
+		print_exp(tree.children[0])
+	elif tree.tok.type in ['-', '+', '*', '/', '%', ':',
+					  '&&', '||', '==', '<', '>', '<=', '>=', '!=']:
+		out('(')
+		print_exp(tree.children[0])
+		out(' '+tree.tok.type+' ')
+		print_exp(tree.children[1])
+		out(')')
+	elif tree.tok.type == 'int' or tree.tok.type == 'bool':
+		out(str(tree.tok.val))
+	elif tree.tok.type in ['.hd', '.tl', '.fst', '.snd'] \
+		or tree.tok.type == 'id':
 		print_field(tree)
-	elif tree.val == '[]':
+	elif tree.tok.type == '[]':
 		out('[]')
-	elif tree.val == ',':
+	elif tree.tok.type == ',':
 		out('(')
 		print_exp(tree.children[0])
 		out(', ')
@@ -131,11 +129,11 @@ def print_exp(tree):
 		out(')')
 
 def print_field(tree):
-	if type(tree.val) is tuple and tree.val[0] == 'id':
-		out(tree.val[1])
+	if tree.tok.type == 'id':
+		out(tree.tok.val)
 	else:
 		print_field(tree.children[0])
-		out(tree.val)
+		out(tree.tok.type)
 
 def print_act_args(tree):
 	print_exp(tree.children[0])
