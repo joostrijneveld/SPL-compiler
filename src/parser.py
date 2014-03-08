@@ -17,7 +17,7 @@ class Node:
 def pop_token(tokens, literal):
 	tok = tokens.popleft()
 	if tok.type != literal:
-		raise Exception("Expected '{}', but got: {}".format(literal, tok.type))
+		raise Exception("Line {}:{} Expected '{}', but got: {}".format(tok.line, tok.col, literal, tok.type))
 	return tok
 
 def parse_spl(tokens):
@@ -64,7 +64,7 @@ def parse_fundecl(rettype, tokens):
 	vardecls = parse_vardecl_list(tokens)
 	stmts = parse_stmt_list(tokens)
 	if not stmts:
-		raise Exception("Expected statement, but got: {}".format(tokens[0].type))
+		raise Exception("Line {}:{} Expected statement, but got: {}".format(tokens[0].line, tokens[0].col, tokens[0].type))
 	pop_token(tokens, '}')
 	return Node('FunDecl', rettype, Node(funname), fargs, vardecls, stmts)
 
@@ -82,7 +82,7 @@ def parse_type(tokens):
 		t_left = parse_type(tokens)
 		pop_token(tokens,']')
 		return Node(tok, t_left)
-	raise Exception("Expected new type but got: {}".format(tok.type))
+	raise Exception("Line {}:{} Expected new type but got: {}".format(tok.line, tok.col, tok.type))
 		
 def parse_stmt_list(tokens):
 	if tokens[0].type == '}':
@@ -125,7 +125,7 @@ def parse_stmt(tokens):
 		stmt_scope = parse_stmt_list(tokens)			
 		pop_token(tokens, '}')
 		return Node('Scope',stmt_scope)
-	raise Exception("Expected new statement, but got: {}".format(tok.type))
+	raise Exception("Line {}:{} Expected new statement, but got: {}".format(tok.line, tok.col, tok.type))
 		
 def parse_exp_field(id_tok, tokens):
 	t = Node(id_tok)
@@ -179,8 +179,8 @@ def parse_exp_base(tokens):
 		elif tok.type == ')': # or with an exp in brackets
 			if not t_right:
 				return t_left
-		raise Exception("Expected ')' or ',', but got: {}".format(tok.type))
-	raise Exception("Expected new expression, but got: {}".format(tok.type))
+		raise Exception("Line {}:{} Expected ')' or ',', but got: {}".format(tok.line, tok.col, tok.type))
+	raise Exception("Line {}:{} Expected new expression, but got: {}".format(tok.line, tok.col, tok.type))
 
 def parse_exp_un(tokens):
 	if tokens and tokens[0].type in ['-', '!']:
@@ -222,7 +222,7 @@ def build_tree(tokens):
 	if not tree:
 		raise Exception("Unable to parse: program is empty?")
 	if tokens:
-		raise Exception("Done parsing, but there are still tokens remaining. Next token: {}".format(tokens[0].type))
+		raise Exception("Line {}:{} Done parsing, but there are still tokens remaining. Next token: {}".format(tokens[0].line, tokens[0].col, tokens[0].type))
 	return tree
 	
 # design choices:
