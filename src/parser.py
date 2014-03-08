@@ -90,45 +90,42 @@ def parse_stmt_list(tokens):
 	return Node(';', parse_stmt(tokens), parse_stmt_list(tokens))
 
 def parse_stmt(tokens):
-	try:
-		tok = tokens.popleft()
-		if tok.type == 'id':
-			if tokens[0].type == '(': # for ExpFunc
-				result = parse_exp_func(tok, tokens)
-			else: # for ExpField
-				exp_field = parse_exp_field(tok, tokens)
-				littok = pop_token(tokens, '=')
-				result = Node(littok, exp_field, parse_exp(tokens))
+	tok = tokens.popleft()
+	if tok.type == 'id':
+		if tokens[0].type == '(': # for ExpFunc
+			result = parse_exp_func(tok, tokens)
+		else: # for ExpField
+			exp_field = parse_exp_field(tok, tokens)
+			littok = pop_token(tokens, '=')
+			result = Node(littok, exp_field, parse_exp(tokens))
+		pop_token(tokens, ';')
+		return result
+	elif tok.type == 'if':
+		pop_token(tokens, '(')
+		condition = parse_exp(tokens)
+		pop_token(tokens, ')')
+		if_stmt = parse_stmt(tokens)
+		if tokens and tokens[0].type == 'else': # optional else
+			pop_token(tokens, 'else')
+			return Node(tok, condition, if_stmt, parse_stmt(tokens))
+		return Node(tok, condition, if_stmt, None)
+	elif tok.type == 'while':
+		pop_token(tokens, '(')
+		condition = parse_exp(tokens)
+		pop_token(tokens, ')')
+		return Node(tok, condition, parse_stmt(tokens))
+	elif tok.type == 'return':
+		if tokens[0].type == ';':
 			pop_token(tokens, ';')
-			return result
-		elif tok.type == 'if':
-			pop_token(tokens, '(')
-			condition = parse_exp(tokens)
-			pop_token(tokens, ')')
-			if_stmt = parse_stmt(tokens)
-			if tokens and tokens[0].type == 'else': # optional else
-				pop_token(tokens, 'else')
-				return Node(tok, condition, if_stmt, parse_stmt(tokens))
-			return Node(tok, condition, if_stmt, None)
-		elif tok.type == 'while':
-			pop_token(tokens, '(')
-			condition = parse_exp(tokens)
-			pop_token(tokens, ')')
-			return Node(tok, condition, parse_stmt(tokens))
-		elif tok.type == 'return':
-			if tokens[0].type == ';':
-				pop_token(tokens, ';')
-				return Node(tok, None)
-			result = parse_exp(tokens)
-			pop_token(tokens, ';')
-			return Node(tok, result)
-		elif tok.type == '{':
-			stmt_scope = parse_stmt_list(tokens)			
-			pop_token(tokens, '}')
-			return Node('Scope',stmt_scope)
-		raise Exception("Expected new statement, but got: {}".format(tok.type))
-	except IndexError:
-		raise Exception("Unfinished statement, but ran out of tokens.")
+			return Node(tok, None)
+		result = parse_exp(tokens)
+		pop_token(tokens, ';')
+		return Node(tok, result)
+	elif tok.type == '{':
+		stmt_scope = parse_stmt_list(tokens)			
+		pop_token(tokens, '}')
+		return Node('Scope',stmt_scope)
+	raise Exception("Expected new statement, but got: {}".format(tok.type))
 		
 def parse_exp_field(id_tok, tokens):
 	t = Node(id_tok)
@@ -221,7 +218,7 @@ def build_tree(tokens):
 	try:
 		tree = parse_spl(tokens)
 	except IndexError:
-		raise Exception("Unfinished expression, but ran out of tokens.")
+		raise Exception("Unexpectedly reached end of file.")
 	if not tree:
 		raise Exception("Unable to parse: program is empty?")
 	if tokens:
