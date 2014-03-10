@@ -1,0 +1,28 @@
+/*
+	This function provides the n-th Fibonacci number, recursively
+	It might blow up the stack a bit..
+*/
+
+Int fib(Int n) {
+	if (n == 0 || n == 1) {
+		return 1;
+	}
+	return fib(n-1) + fib(n-2);
+}
+
+/*
+	Surely we can do better than that!
+*/
+Int fib_fast(Int n) {
+	l = fib_list(n);
+	return l.hd;
+}	
+
+[Int] fib_list(Int n) {
+	if (n == 1) {
+		return 1 : 1 : [];
+	}
+	l = fib_list(n-1);
+	sum = l.hd + l.tl.hd;
+	return sum : l;
+}
