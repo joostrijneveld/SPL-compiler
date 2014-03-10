@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from collections import deque # superefficient popleft
+from collections import deque # for an efficient popleft()
 from functools import partial
 
 class Node:
@@ -11,13 +11,14 @@ class Node:
 	def __repr__(self, depth = 0):
 		ret = "\t"*depth+repr(self.tok)+"\n"
 		for c in self.children:
-			ret += c.__repr__(depth + 1) if c else "\t"*(depth+1)+c.__repr__()+"\n"
+			ret += c.__repr__(depth + 1) if c else "\t"*(depth+1)+str(c)+"\n"
 		return ret
 
 def pop_token(tokens, literal):
 	tok = tokens.popleft()
 	if tok.type != literal:
-		raise Exception("Line {}:{} Expected '{}', but got: {}".format(tok.line, tok.col, literal, tok.type))
+		raise Exception("[Line {}:{}] Expected '{}', but got: {}"
+						.format(tok.line, tok.col, literal, tok.type))
 	return tok
 
 def parse_spl(tokens):
@@ -64,7 +65,8 @@ def parse_fundecl(rettype, tokens):
 	vardecls = parse_vardecl_list(tokens)
 	stmts = parse_stmt_list(tokens)
 	if not stmts:
-		raise Exception("Line {}:{} Expected statement, but got: {}".format(tokens[0].line, tokens[0].col, tokens[0].type))
+		raise Exception("[Line {}:{}] Expected statement, but got: {}"
+						.format(tokens[0].line, tokens[0].col, tokens[0].type))
 	pop_token(tokens, '}')
 	return Node('FunDecl', rettype, Node(funname), fargs, vardecls, stmts)
 
@@ -82,7 +84,8 @@ def parse_type(tokens):
 		t_left = parse_type(tokens)
 		pop_token(tokens,']')
 		return Node(tok, t_left)
-	raise Exception("Line {}:{} Expected new type but got: {}".format(tok.line, tok.col, tok.type))
+	raise Exception("[Line {}:{}] Expected new type but got: {}"
+					.format(tok.line, tok.col, tok.type))
 		
 def parse_stmt_list(tokens):
 	if tokens[0].type == '}':
@@ -105,7 +108,7 @@ def parse_stmt(tokens):
 		condition = parse_exp(tokens)
 		pop_token(tokens, ')')
 		if_stmt = parse_stmt(tokens)
-		if tokens and tokens[0].type == 'else': # optional else
+		if tokens and tokens[0].type == 'else': # optional 'else'
 			pop_token(tokens, 'else')
 			return Node(tok, condition, if_stmt, parse_stmt(tokens))
 		return Node(tok, condition, if_stmt, None)
@@ -125,7 +128,8 @@ def parse_stmt(tokens):
 		stmt_scope = parse_stmt_list(tokens)			
 		pop_token(tokens, '}')
 		return Node('Scope',stmt_scope)
-	raise Exception("Line {}:{} Expected new statement, but got: {}".format(tok.line, tok.col, tok.type))
+	raise Exception("[Line {}:{}] Expected new statement, but got: {}"
+					.format(tok.line, tok.col, tok.type))
 		
 def parse_exp_field(id_tok, tokens):
 	t = Node(id_tok)
@@ -136,7 +140,7 @@ def parse_exp_field(id_tok, tokens):
 
 def parse_exp_func(id_tok, tokens):
 	t_left = Node(id_tok)
-	pop_token(tokens, '(') # pop off the '(' that was tested for in parse_exp_base
+	pop_token(tokens, '(')
 	t_right = None
 	if tokens[0].type != ')':
 		t_right = parse_exp_args(tokens)
@@ -159,7 +163,6 @@ def parse_fargs(tokens):
 	return Node(',', argtype, Node(argname), None)
 
 def parse_exp_base(tokens):
-	# Parses the first expression from tokens and returns it as a parse tree
 	tok = tokens.popleft()
 	if tok.type == 'id':
 		if tokens[0].type == '(': # for ExpFunc
@@ -179,8 +182,10 @@ def parse_exp_base(tokens):
 		elif tok.type == ')': # or with an exp in brackets
 			if not t_right:
 				return t_left
-		raise Exception("Line {}:{} Expected ')' or ',', but got: {}".format(tok.line, tok.col, tok.type))
-	raise Exception("Line {}:{} Expected new expression, but got: {}".format(tok.line, tok.col, tok.type))
+		raise Exception("[Line {}:{}] Expected ')' or ',', but got: {}"
+						.format(tok.line, tok.col, tok.type))
+	raise Exception("[Line {}:{}] Expected new expression, but got: {}"
+					.format(tok.line, tok.col, tok.type))
 
 def parse_exp_un(tokens):
 	if tokens and tokens[0].type in ['-', '!']:
@@ -204,14 +209,14 @@ def tail_recursion(fn, ops, tokens):
 		t = Node(tok, t, t_right)
 	return t
 	
-# 'currying' so that we can continue to pass a function reference down
-parse_exp_mult 	= partial(tail_recursion, parse_exp_con, ['*', '/', '%'])
-parse_exp_add 	= partial(tail_recursion, parse_exp_mult, ['+', '-'])
-parse_exp_cmp 	= partial(tail_recursion, parse_exp_add, ['<', '<=', '>', '>='])
-parse_exp_eq 	= partial(tail_recursion, parse_exp_cmp, ['==','!='])
-parse_exp_and 	= partial(tail_recursion, parse_exp_eq, ['&&'])
-parse_exp_or 	= partial(tail_recursion, parse_exp_and, ['||'])
-parse_exp 		= parse_exp_or
+# partial function application, so that we can pass a function reference down
+parse_exp_mult = partial(tail_recursion, parse_exp_con, ['*', '/', '%'])
+parse_exp_add  = partial(tail_recursion, parse_exp_mult, ['+', '-'])
+parse_exp_cmp  = partial(tail_recursion, parse_exp_add, ['<', '<=', '>', '>='])
+parse_exp_eq   = partial(tail_recursion, parse_exp_cmp, ['==','!='])
+parse_exp_and  = partial(tail_recursion, parse_exp_eq, ['&&'])
+parse_exp_or   = partial(tail_recursion, parse_exp_and, ['||'])
+parse_exp      = parse_exp_or
 
 def build_tree(tokens):
 	tokens = deque(tokens) # to allow popleft
@@ -222,11 +227,7 @@ def build_tree(tokens):
 	if not tree:
 		raise Exception("Unable to parse: program is empty?")
 	if tokens:
-		raise Exception("Line {}:{} Done parsing, but there are still tokens remaining. Next token: {}".format(tokens[0].line, tokens[0].col, tokens[0].type))
+		raise Exception("[Line {}:{}] Done parsing, but there are still tokens remaining. Next token: {}"
+						.format(tokens[0].line, tokens[0].col, tokens[0].type))
 	return tree
 	
-# design choices:
-# for tuples, the comma is overloaded as it also defines function calls, so cannot be the value of a node.
-# To prevent this problem, we subsitute an '@' operator to imply tuples
-
-# for statement concatenation (e.g. in scopes) we use a ';' as node value

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import re
+import re, collections
 
 LITERALS = [
     'True', 'False',
@@ -12,16 +12,10 @@ LITERALS = [
 
 TOKENTYPES = ['id','int'] + LITERALS
 
-class Token:
-	def __init__(self, line, col, type, val=None):
-		self.line = line
-		self.col = col
-		self.type = type
-		self.val = val
-
+class Token(collections.namedtuple('TokenBase', ['line','col','type','val'])):
 	def __repr__(self):
-		return self.type + ('['+str(self.val)+']' if self.val != None else '') +' ' \
-				+ str(self.line) + ':' + str(self.col)
+		return (self.type + ('['+str(self.val)+']')*(self.val is not None) +
+				' ['+ str(self.line) + ':' + str(self.col)+']')
 
 class Position:
 	def __init__(self):
@@ -31,7 +25,7 @@ class Position:
 		self.prevcol = self.col =  1
 		self.line += 1
 	
-	def tokpos(self):
+	def eval_tokpos(self):
 		result, self.prevcol = self.prevcol, self.col
 		return result
 		
@@ -66,7 +60,7 @@ def complete_token(candidates, token, tokens, p):
 		result = candidates[0]
 	else:
 		for t in list(candidates):
-			if (t in LITERALS and token == t) or (t == 'int' and token.isdigit()):
+			if t in LITERALS and token == t or t == 'int' and token.isdigit():
 				result = t
 				break
 		else:
@@ -75,13 +69,13 @@ def complete_token(candidates, token, tokens, p):
 			else:
 				raise Exception("Unrecognised token: "+token)
 	if result == 'id':
-		tokens.append(Token(p.line, p.tokpos(), result, token))
+		tokens.append(Token(p.line, p.eval_tokpos(), result, token))
 	elif result == 'int':
-		tokens.append(Token(p.line, p.tokpos(), result, int(token)))
+		tokens.append(Token(p.line, p.eval_tokpos(), result, int(token)))
 	elif result in ['True', 'False']: #exceptional case for booleans
-		tokens.append(Token(p.line, p.tokpos(), 'bool', result == 'True'))
+		tokens.append(Token(p.line, p.eval_tokpos(), 'bool', result == 'True'))
 	else:
-		tokens.append(Token(p.line, p.tokpos(), result))
+		tokens.append(Token(p.line, p.eval_tokpos(), result, None))
 		
 def scan_spl(fname):
 	tokens = []
@@ -97,7 +91,7 @@ def scan_spl(fname):
 					complete_token(candidates, token, tokens, p)
 				break
 			elif not token and not c.strip():
-				p.tokpos()
+				p.eval_tokpos()
 				if c == '\n':
 					p.nextline()
 				continue  # no token, and the next char is whitespace => skip!
@@ -118,36 +112,3 @@ def scan_spl(fname):
 			prevtoken, prevcandidates = token, list(candidates)
 	return tokens
 	
-# tokens types:
-# id 			alpha ('_' | alphanum)*
-# int 			['-'] digit+
-# Op1			!, -
-# Op2			+ - * / % == < > <= >= != && || :
-# comma
-# true
-# false
-# if
-# then
-# else
-# while
-# return
-# Void
-# Int
-# Bool
-# hd
-# tl
-# fst
-# snd
-# {, }, [, ], (, )
-# =
-# ;
-# design choices: ids mogen geen keywords zijn
-# dot kan weg want hd tl etc doen we gelijk in 1x als token
-# we voegen de comma, brackets, equality en semicolon allemaal in het 'punct'-token samen voor leesbare code
-
-# keuze: we maken 1 'op'-token waar ook meteen de min en de ! in zitten. we zoeken daarna wel uit of het op1 of op2 is
-
-# we houden een ljistje bij van kandidaten-tokens die het nog kunnen zijn
-# als het lijstje na een ronde 1 element bevat is het sowieso deze, maar gaan we door tot 'ie niet meer kan
-# als het lijstje na een ronde >=2 elementen bevat moet je nog een keer
-# als het lijstje na een ronde 0 elementen bevat moet je het vorige lijstje pakken en een tiebreak doen

@@ -1,0 +1,45 @@
+listed as 'design choices' in the source files, but moved here for cleanliness.
+note that these are largely outdated and should be cleaned up.
+
+scanner.py:
+# tokens types:
+# id 			alpha ('_' | alphanum)*
+# int 			['-'] digit+
+# Op1			!, -
+# Op2			+ - * / % == < > <= >= != && || :
+# comma
+# true
+# false
+# if
+# then
+# else
+# while
+# return
+# Void
+# Int
+# Bool
+# hd
+# tl
+# fst
+# snd
+# {, }, [, ], (, )
+# =
+# ;
+# design choices: ids mogen geen keywords zijn
+# dot kan weg want hd tl etc doen we gelijk in 1x als token
+# we voegen de comma, brackets, equality en semicolon allemaal in het 'punct'-token samen voor leesbare code
+
+# keuze: we maken 1 'op'-token waar ook meteen de min en de ! in zitten. we zoeken daarna wel uit of het op1 of op2 is
+
+# we houden een ljistje bij van kandidaten-tokens die het nog kunnen zijn
+# als het lijstje na een ronde 1 element bevat is het sowieso deze, maar gaan we door tot 'ie niet meer kan
+# als het lijstje na een ronde >=2 elementen bevat moet je nog een keer
+# als het lijstje na een ronde 0 elementen bevat moet je het vorige lijstje pakken en een tiebreak doen
+
+
+parser.py:
+# design choices:
+# for tuples, the comma is overloaded as it also defines function calls, so cannot be the value of a node.
+# To prevent this problem, we subsitute an '@' operator to imply tuples
+
+# for statement concatenation (e.g. in scopes) we use a ';' as node value
