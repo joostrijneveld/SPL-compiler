@@ -1,0 +1,17 @@
+/* Calculate the length of a list */
+Int len([a] l) {
+    if ( isEmpty(l) ) { 
+        return 0;
+    } else {
+        return 1 + len(l.tl);
+    }
+}
+
+/* Reverse a list */
+[a] reverse([a] l) {
+    if ( isEmpty(l) ) {
+        return [];
+    } else {
+        return reverse(l.tl) : l.hd;
+    }
+}

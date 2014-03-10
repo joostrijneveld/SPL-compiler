@@ -1,0 +1,8 @@
+/* Calculates the length of a list */
+Int len([a] l) {
+    if ( isEmpty(a) ) { 
+        return 0;
+    } else {
+        return 1 + len(a.tl);
+    }
+}
