@@ -78,7 +78,7 @@ def print_stmt(tree, depth):
 		print_stmt(tree.children[1], depth + int(tree.children[1].tok != 'Scope'))
 		if tree.children[2]:
 			out('else\n', depth)
-			print_stmt(tree.children[2], depth + int(tree.children[1].tok != 'Scope'))
+			print_stmt(tree.children[2], depth + int(tree.children[2].tok != 'Scope'))
 	elif tree.tok.type == 'while':
 		out('while (', depth)
 		print_exp(tree.children[0])
