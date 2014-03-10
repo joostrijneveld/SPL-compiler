@@ -1,3 +1,6 @@
+
+// This file contains the example programs as provided in the assignment PDF
+
 /*
 Three ways to implement the factorial function in SPL.
 First the recursive version. */
