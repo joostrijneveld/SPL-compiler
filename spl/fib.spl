@@ -14,15 +14,15 @@ Int fib(Int n) {
 	Surely we can do better than that!
 */
 Int fib_fast(Int n) {
-	l = fib_list(n);
+	Int l = fib_list(n);
 	return l.hd;
 }	
 
 [Int] fib_list(Int n) {
+	Int l = 0;
 	if (n == 1) {
 		return 1 : 1 : [];
 	}
 	l = fib_list(n-1);
-	sum = l.hd + l.tl.hd;
-	return sum : l;
+	return (l.hd + l.tl.hd) : l;
 }

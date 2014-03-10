@@ -1,0 +1,37 @@
+/*
+	This function filters a list so that only odd numbers remain
+*/
+[Int] filter_even([Int] l) {
+	if (l.hd % 2 == 1) {
+		return l.hd : l.tl;
+	}
+	return l.tl;
+}
+
+/*
+	This function filters a list so that only even numbers remain
+*/
+[Int] filter_odd([Int] l) {
+	if (l.hd % 2 == 0) {
+		return l.hd : l.tl;
+	}
+	return l.tl;
+}
+
+/*
+	This function filters all elements that are not squares
+	Note that it's truly horrible
+*/
+[Int] filter_nonsquares([Int] l) {
+	Int n = 1;
+	if (isEmpty(l)) {
+		return [];
+	}
+	while (l.hd < n * n) {
+		n = n + 1;
+	}
+	if (n == l.hd) {
+		return l.hd : l.tl;
+	}
+	return l.tl;
+}

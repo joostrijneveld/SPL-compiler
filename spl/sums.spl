@@ -1,0 +1,14 @@
+Int sum([Int] l) {
+	if (isEmpty(l)) {
+		return 0;
+	}
+	return l.hd + sum(l.tl);
+}
+
+Int sum_of_squares([Int] l) {
+	if (isEmpty(l)) {
+		return 0;
+	}
+	return l.hd * l.hd + sum(l.tl);
+}
+
