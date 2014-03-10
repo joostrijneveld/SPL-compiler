@@ -1,0 +1,28 @@
+Bool isPrime(Int value) {
+    Int i = 2;
+    while ( i < value) {
+        // Als dit getal deelbaar is, dan is dit géén priemgetal
+        if (value % i == 0)
+        {
+            return False;
+        }
+        i = i + 1;
+    }
+    return True;
+}
+
+[Int] primes(Int n) {
+    [Int] primefac = [];
+    Int d = 2;
+    while (  d * d <= n) {
+        while ( (n % d) == 0) {
+            primefac = d : primefac;
+            n = n / d;
+        }
+        d = d + 1;
+    if ( n > 1 ) {
+        primefac = n : primefac;
+    }
+    }
+    return primefac;
+}
