@@ -1,0 +1,15 @@
+/* Calculate all 12 points on x^2 + y^2 = 1-5x^2y^2 in F_13 */
+[(Int, Int)] edwardCurve() {
+	Int x = 0;
+	Int y = 0;
+	[(Int, Int)] accul = [];
+
+	while (x < 13) {
+		while (y < 13) {
+			if ((x*x + y*y) % 13 == (1 - 5* (x*x) * (y*y)) % 13) {
+				accul = (x,y) : accul;		
+			}
+		}
+	}
+	return accul;
+}

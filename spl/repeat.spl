@@ -1,0 +1,7 @@
+[Int] repeat(a x, Int n) {
+	if ( n == 0) {
+		return [];
+	} else {
+		return x : repeat(x, n - 1);
+	}
+}
