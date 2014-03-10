@@ -20,7 +20,7 @@ class Token:
 		self.val = val
 
 	def __repr__(self):
-		return self.type + ('['+str(self.val)+']' if self.val else '') +' ' \
+		return self.type + ('['+str(self.val)+']' if self.val != None else '') +' ' \
 				+ str(self.line) + ':' + str(self.col)
 
 class Position:
