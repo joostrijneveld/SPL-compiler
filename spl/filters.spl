@@ -31,7 +31,7 @@
 		n = n + 1;
 	}
 	if (n == l.hd) {
-		return l.hd : l.tl;
+		return l.hd : filter_nonsquares(l.tl);
 	}
-	return l.tl;
+	return filter_nonsquares(l.tl);
 }

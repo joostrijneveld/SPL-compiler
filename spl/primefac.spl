@@ -20,9 +20,9 @@ Bool isPrime(Int value) {
             n = n / d;
         }
         d = d + 1;
-    if ( n > 1 ) {
-        primefac = n : primefac;
-    }
+        if ( n > 1 ) {
+            primefac = n : primefac;
+        }
     }
     return primefac;
 }

@@ -1,11 +1,11 @@
-Int sum([Int] l) {
+a sum([a] l) {
 	if (isEmpty(l)) {
 		return 0;
 	}
 	return l.hd + sum(l.tl);
 }
 
-Int sum_of_squares([Int] l) {
+a sum_of_squares([a] l) {
 	if (isEmpty(l)) {
 		return 0;
 	}
