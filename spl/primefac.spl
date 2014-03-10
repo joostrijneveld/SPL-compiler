@@ -1,7 +1,7 @@
 Bool isPrime(Int value) {
     Int i = 2;
     while ( i < value) {
-        // Als dit getal deelbaar is, dan is dit géén priemgetal
+        // If i is divisible, it is definitely not prime
         if (value % i == 0)
         {
             return False;

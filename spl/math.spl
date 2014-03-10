@@ -1,0 +1,29 @@
+Int abs(Int x) {
+    if (x < 0) {
+        return x * -1;
+    }
+    return x;
+}
+
+Int gcd(Int a, Int b) {
+    Int temp = 0;
+    while (b > 0) {
+        temp = b;
+        if (a < b)
+            b = a;
+        else
+            b = a % b;
+        a = temp;
+    }
+    return a;
+}
+
+Int gcd_list([Int] a) {
+	if (isEmpty(a)) {
+		return 1;
+	}
+	if (isEmpty(a.tl)) {
+		return a.hd;
+	}
+	return gcd(a.hd, gcd_list(a.tl));
+}
