@@ -15,3 +15,21 @@ Int len([a] l) {
         return reverse(l.tl) : l.hd;
     }
 }
+
+/* Return the maximum of x and y */
+a max(a x, a y) {
+    if ( x > y ) {
+        return x;
+    } else {
+        return y;
+    }
+}
+
+/* Return the maximum value of the list */
+a maxList([a] l) {
+    if ( isEmpty(l.tl) ) {
+        return l.hd;
+    } else {
+       return maxList( max(l.hd, l.tl.hd) : l.tl.tl );
+    }
+}
