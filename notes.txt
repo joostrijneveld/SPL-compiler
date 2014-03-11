@@ -43,3 +43,19 @@ parser.py:
 # To prevent this problem, we subsitute an '@' operator to imply tuples
 
 # for statement concatenation (e.g. in scopes) we use a ';' as node value
+
+
+From grammar.txt
+
+--the parser does not use this since the scanner already makes this distinction
+
+int		= digit+
+id 		= alpha ("_" | alphaNum)*
+bool	= True | False
+
+--design choices:
+--we adhere to the binding of operators as defined in C:
+--http://en.wikipedia.org/wiki/Operators_in_C_and_C
+
+--list concatenation should bind stronger than plus and minus, because
+--1:2 + 3:4 is actually short for 1:2:[] + 3:4:[], which implies 1:2:3:4:[] (and not 1:5:4)
