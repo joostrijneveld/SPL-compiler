@@ -1,0 +1,27 @@
+\documentclass[a4paper]{article}
+\usepackage[english]{babel} % for english wordwrapping
+\usepackage{a4wide} % for a4 paper and images
+\usepackage[parfill]{parskip} % no indents on new par, but new lines
+
+\title{Notes on the Scanner, Parser and Pretty Printer}
+\author{Joost Rijneveld, s4048911\\Koen van Ingen, s4058038}
+\date{}
+\begin{document}
+
+\maketitle
+
+{\bf Usage:} {\tt python src/toolchain.py spl/assignmentprogs.spl}
+Our submission contains the following files:
+
+\begin{description}
+	\item[src/toolchain.py] The toolchain calls the scanner, parser and printer consecutively, passing the result from one on to the next. This is the script you need to execute to parse and print an {\tt .spl} source file.
+	\item[src/scanner.py] This file contains the scanner. The scanner expects a filename and produces a list of Tokens that can then be passed on to the parser. {\tt Token} objects contain a position (line / col) to indicate where the token was found, for future error handling.
+	\item[src/parser.py] The parser expects a list of {\tt Token} objects, as produced by the scanner. It then outputs the root of a parse tree (a {\tt Node} object). Grammar rules can be mapped one-to-one to {\tt parse\_} functions, some of which are generated based on a blueprint function that is partially applied (the {\tt tail\_recursion} function). When the parser runs into an error, it prints the expected literal (if applicable) and the line and column number.
+	\item[src/printer.py] This script expects a parse tree as provided by the parser, and prints formatted (and aligned) SPL source code to stdout.
+	\item[spl/assignmentprogs.spl] The example SPL programs as provided in the assignment.
+	\item[spl/*] This folder contains 10 additional sample SPL programs, as required by the assignment. All of them parse and print fine.
+	\item[grammar.txt] This file contains the modified grammar which we used for our parser.
+\end{description}
+
+
+\end{document}
