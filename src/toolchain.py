@@ -1,10 +1,11 @@
+from __future__ import print_function
 #! /usr/bin/env python
 
 import sys
 import parser, scanner, prettyprinter
 
 def help():
-        print "Usage: toolchain.py inputfile.spl"
+        print("Usage: toolchain.py inputfile.spl")
 
 def main(): 
 	if len(sys.argv) != 2:
