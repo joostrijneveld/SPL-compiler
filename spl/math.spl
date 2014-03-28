@@ -1,3 +1,13 @@
+Int pi = 3;
+
+Void foo() {
+    Int i = 1;
+    Int j = 2;
+    Int k = 3;
+    Int l = 4;
+    i = i + 1;
+}
+
 Int abs(Int x) {
     if (x < 0) {
         return x * -1;
