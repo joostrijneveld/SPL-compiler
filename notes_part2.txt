@@ -1,0 +1,6 @@
+symboltable wordt een dictionary:
+	key = de identifier
+	value = een tupel van declaratie-positie, output en input type, bij variables is input 'None'
+	voorbeeld:
+		"Int a" geeft {'a' => ((1,4), 'Int', None)}
+		"Int foo(Bool b)" geeft {'foo' => ((1,4), 'Int', ['Bool'])}
