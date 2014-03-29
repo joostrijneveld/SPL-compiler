@@ -5,18 +5,18 @@ import collections
 Symbol = collections.namedtuple('Symbol', ['line','col','type','argtype'])
 
 def print_symboltable(symboltable):
-	print 'Position\tName\t\tType\tArgtypes'
-	print '-'*50
+	print '='*62
+	print ("{0: <12} {1: <15} {2: <15} {3: <20}"
+			.format('Position', 'Name', 'Type', 'Argtypes'))
+	print '-'*62
 	for k, v in symboltable.iteritems():
-		if v.argtype:
-			argvstring =  ", ".join(str(t) for t in v.argtype)
-		else:
-			argvstring = "None"
-		print ("[Line {}:{}]\t{}\t\t{}\t{}"
-				.format(v.line, v.col, k, v.type, argvstring))
+		argvstring =  ", ".join(map(str,v.argtype)) if v.argtype else None
+		print ("{: <12} {: <15} {: <15} {: <20}"
+				.format("{0.line}:{0.col}".format(v), k, v.type, argvstring))
+	print '='*62
 
 def find_argtypes(tree):
-	""" expects a tree with an arg-node (',') as root """
+	''' expects a tree with an arg-node (',') as root '''
 	if not tree:
 		return []
 	return [tree.children[0]] + find_argtypes(tree.children[2])
@@ -40,7 +40,7 @@ def create_table(tree):
 	return symbols
 
 def create_argtable(tree):
-	""" expects a tree with an arg-node (',') as root """
+	''' expects a tree with an arg-node (',') as root '''
 	if not tree:
 		return dict()
 	t = tree.children[0]
