@@ -10,10 +10,22 @@ class Type:
 	def __init__(self, value):
 		self.value = value
 	
+	@staticmethod
 	def from_node(tree):
-		pass
+		if tree.tok.type in ['Bool', 'Int']:
+			return Type(tree.tok.type)
+		elif tree.tok.type == 'id':
+			return Type(tree.tok.val)
+		elif tree.tok.type == ',':
+			return (Type.from_node(tree.children[0]), Type.from_node(tree.children[1]))
+		elif tree.tok.type == '[':
+			return [Type.from_node(tree.children[0])]
+
+	def __repr__(self):
+		return self.value
+		
 	def __eq__(self, other):
-		pass	
+		return self.value == other.value
 		
 def print_symboltable(symboltable):
 	print '='*62
@@ -30,7 +42,7 @@ def find_argtypes(tree):
 	''' expects a tree with an arg-node (',') as root '''
 	if not tree:
 		return []
-	return [tree.children[0]] + find_argtypes(tree.children[2])
+	return [Type.from_node(tree.children[0])] + find_argtypes(tree.children[2])
 
 def update_symbols(symbols, sym, t, argtypes):
 	if sym.val in symbols:
@@ -46,7 +58,7 @@ def create_table(tree):
 	''' expects a tree with a Decl-node as root '''
 	if not tree:
 		return dict()
-	t = tree.children[0].children[0]
+	t = Type.from_node(tree.children[0].children[0])
 	sym = tree.children[0].children[1].tok
 	argtypes = None  # VarDecls do not have arguments
 	if tree.children[0].tok == 'FunDecl':
@@ -58,7 +70,7 @@ def create_argtable(tree):
 	''' expects a tree with an arg-node (',') as root '''
 	if not tree:
 		return dict()
-	t = tree.children[0]
+	t = Type.from_node(tree.children[0])
 	sym = tree.children[1].tok
 	symbols = create_argtable(tree.children[2])
 	return update_symbols(symbols, sym, t, None)
@@ -77,15 +89,16 @@ def create_functiontable(tree):
 
 def type_op2(fn, tree, symtab, expected_type):
 	if tree.tok.type == '||':
-		if type_exp(tree.children[0]) != expected_type or
-			type_exp(tree.children[1]) != expected_type:
+		t1, t2 = map(type_exp, *tree.children[0])
+		if t1 != expected_type or t2 != expected_type:
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
 							+ "Types found: {} {}"
-							.format(tree.tok.line, tree.tok.col, tree.tok.type
+							.format(tree.tok.line, tree.tok.col, tree.tok.type,
 								t1, t2))
 		return expected_type
 	return fn(tree, symtab)
 
+type_exp_and = id
 type_exp_or = partial(type_op2, type_exp_and, expected_type='Bool')
 type_exp = type_exp_or
 
@@ -101,6 +114,7 @@ def type_expfunc(tree, symtab):
 
 def check_stmt(tree, symboltable):	
 	''' expects a tree with a statement node as root '''
+	return
 	print tree
 	if tree.tok == 'Scope':
 		check_stmts(tree.children[0], symboltable)

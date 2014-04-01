@@ -15,19 +15,6 @@ class Node:
 			ret += c.__repr__(depth + 1) if c else "\t"*(depth+1)+str(c)+"\n"
 		return ret
 	
-	def __str__(self):
-		if type(self.tok) is not Token:
-			return repr(self)
-		if self.tok.type in ['Int', 'Bool', 'Void']:
-			return self.tok.type
-		elif self.tok.type == ',':
-			return '('+ str(self.children[0]) + ', ' + str(self.children[1]) +')'
-		elif self.tok.type == '[':
-			return '[' + str(self.children[0]) + ']'
-		elif self.tok.type == 'id':
-			return self.tok.val
-		return repr(self)
-
 def pop_token(tokens, literal):
 	tok = tokens.popleft()
 	if tok.type != literal:
@@ -141,7 +128,7 @@ def parse_stmt(tokens):
 	elif tok.type == '{':
 		stmt_scope = parse_stmt_list(tokens)			
 		pop_token(tokens, '}')
-		return Node(Token(tok.line, tok.col, 'Scope', None),stmt_scope)
+		return Node(Token(tok.line, tok.col, 'Scope', None), stmt_scope)
 	raise Exception("[Line {}:{}] Expected new statement, but got: {}"
 					.format(tok.line, tok.col, tok.type))
 		
