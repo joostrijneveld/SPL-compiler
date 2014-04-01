@@ -17,7 +17,8 @@ class Type:
 		elif tree.tok.type == 'id':
 			return Type(tree.tok.val)
 		elif tree.tok.type == ',':
-			return (Type.from_node(tree.children[0]), Type.from_node(tree.children[1]))
+			return (Type.from_node(tree.children[0]),
+					Type.from_node(tree.children[1]))
 		elif tree.tok.type == '[':
 			return [Type.from_node(tree.children[0])]
 
@@ -87,19 +88,70 @@ def create_functiontable(tree):
 	localsymboltable.update(argsymboltable)
 	return localsymboltable
 
-def type_op2(fn, tree, symtab, expected_type):
-	if tree.tok.type == '||':
-		t1, t2 = map(type_exp, *tree.children[0])
-		if t1 != expected_type or t2 != expected_type:
+def type_exp_field(tree, symtab):
+	if tree.tok.type == 'id':
+		return symtab[tree.tok.val].type
+	t = type_exp_field(tree.children[0], symtab)
+	if type(t) is list:
+		if tree.tok.type == '.hd':
+			return t[0]
+		elif tree.tok.type == '.tl':
+			return t
+		raise Exception("[Line {}:{}] Got list, but cannot apply: {}"
+				.format(tree.tok.line, tree.tok.col, tree.tok.type))
+	elif type(t) is tuple:
+		if tree.tok.type == '.fst':
+			return t[0]
+		elif tree.tok.type == '.snd':
+			return t[1]
+		raise Exception("[Line {}:{}] Got tuple, but cannot apply: {}"
+						.format(tree.tok.line, tree.tok.col, tree.tok.type))
+	
+def type_exp_base(tree, symtab):
+	if tree.tok.type == 'int':
+		return Type('Int')
+	elif tree.tok.type == 'bool':
+		return Type('Bool')
+	elif tree.tok.type == '[]':
+		return Type('List')
+	elif tree.tok.type == 'FunCall':
+		return type_expfunc(tree, symtab)
+	elif tree.tok.type == ',':
+		return (type_exp(tree.children[0]), type_exp(tree.children[1]))
+	else:
+		return type_exp_field(tree,symtab)
+		
+def type_op(fn, expected_type, ops, tree, symtab):
+	if tree.tok.type in ops:
+		types = map(type_exp, *tree.children)
+		if expected_type and not all(t == expected_type for t in types):
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
-							+ "Types found: {} {}"
+							+ "Types found: {}"
 							.format(tree.tok.line, tree.tok.col, tree.tok.type,
-								t1, t2))
+								types))
 		return expected_type
 	return fn(tree, symtab)
 
-type_exp_and = id
-type_exp_or = partial(type_op2, type_exp_and, expected_type='Bool')
+type_exp_unint = partial(type_op, type_exp_base, Type('Int'), ['-'])
+type_exp_unbool = partial(type_op, type_exp_unint, Type('Bool'), ['!'])
+
+def type_exp_con(tree, symtab):
+	if tree.tok.type == ':':
+		t1, t2 = map(type_exp, *tree.children)
+		if t2 not in [[t1], Type('List')]:
+			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
+							+ "Types found: {}"
+							.format(tree.tok.line, tree.tok.col, tree.tok.type,
+								types))
+		return [t1]
+	return type_exp_unbool(tree, symtab)
+
+type_exp_mult = partial(type_op, type_exp_con, Type('Int'), ['*', '/', '%'])
+type_exp_add = partial(type_op, type_exp_mult, Type('Int'), ['+', '-'])
+type_exp_cmp = partial(type_op, type_exp_add, Type('Int'), ['<', '<=', '>', '>='])
+type_exp_eq = partial(type_op, type_exp_cmp, None, ['==','!='])
+type_exp_and = partial(type_op, type_exp_eq, Type('Bool'), ['&&'])
+type_exp_or = partial(type_op, type_exp_and, Type('Bool'), ['||'])
 type_exp = type_exp_or
 
 def type_expargs(tree, symtab):
@@ -107,48 +159,59 @@ def type_expargs(tree, symtab):
 	if not tree:
 		return []
 	return ([type_exp(tree.children[0], symtab)]
-			+ type_expargs(tree.children[1].symtab))
+			+ type_expargs(tree.children[1], symtab))
 
 def type_expfunc(tree, symtab):
 	return symtab[tree.children[0].tok.val].type
 
-def check_stmt(tree, symboltable):	
+def check_stmt(tree, symtab):	
 	''' expects a tree with a statement node as root '''
-	return
-	print tree
-	if tree.tok == 'Scope':
-		check_stmts(tree.children[0], symboltable)
-	elif tree.tok == 'FunCall':
-		out(tree.children[0].tok.val, depth)
-		out('(')
-		if tree.children[1]:
-			print_act_args(tree.children[1])
-		out(');\n')
-	elif tree.tok.type == 'if':
-		out('if (', depth)
-		print_exp(tree.children[0])
-		out(')\n')
-		print_stmt(tree.children[1], depth + int(tree.children[1].tok != 'Scope'))
-		if tree.children[2]:
-			out('else\n', depth)
-			print_stmt(tree.children[2], depth + int(tree.children[2].tok != 'Scope'))
-	elif tree.tok.type == 'while':
-		out('while (', depth)
-		print_exp(tree.children[0])
-		out(')\n')
-		print_stmt(tree.children[1], depth + int(tree.children[1].tok != 'Scope'))
-	elif tree.tok.type == '=':
-		out('', depth)
-		print_field(tree.children[0])
-		out(' = ')
-		print_exp(tree.children[1])
-		out(';\n')
-	elif tree.tok.type == 'return':
-		out('return', depth)
-		if tree.children[0]:
-			out(' ')
-			print_exp(tree.children[0])
-		out(';\n')
+	print tree.tok.type
+	if tree.tok.type == 'Scope':
+		check_stmts(tree.children[0], symtab)
+	elif tree.tok.type == 'FunCall':
+		print symtab
+		type_expfunc(tree, symtab)
+		received = type_expargs(tree.children[1], symtab)
+		expected = symtab[tree.children[0].tok.val].argtype
+		print received
+		print expected
+		if received != expected:
+			raise Exception("[Line {}:{}] Incompatible argument types.\n"
+							+ "Types expected: {}\n"
+							+ "Types found: {}"
+							.format(tree.tok.line, tree.tok.col,
+								expected, received))
+	# 	out(tree.children[0].tok.val, depth)
+	# 	out('(')
+	# 	if tree.children[1]:
+	# 		print_act_args(tree.children[1])
+	# 	out(');\n')
+	# elif tree.tok.type == 'if':
+	# 	out('if (', depth)
+	# 	print_exp(tree.children[0])
+	# 	out(')\n')
+	# 	print_stmt(tree.children[1], depth + int(tree.children[1].tok != 'Scope'))
+	# 	if tree.children[2]:
+	# 		out('else\n', depth)
+	# 		print_stmt(tree.children[2], depth + int(tree.children[2].tok != 'Scope'))
+	# elif tree.tok.type == 'while':
+	# 	out('while (', depth)
+	# 	print_exp(tree.children[0])
+	# 	out(')\n')
+	# 	print_stmt(tree.children[1], depth + int(tree.children[1].tok != 'Scope'))
+	# elif tree.tok.type == '=':
+	# 	out('', depth)
+	# 	print_field(tree.children[0])
+	# 	out(' = ')
+	# 	print_exp(tree.children[1])
+	# 	out(';\n')
+	# elif tree.tok.type == 'return':
+	# 	out('return', depth)
+	# 	if tree.children[0]:
+	# 		out(' ')
+	# 		print_exp(tree.children[0])
+	# 	out(';\n')
 	
 def check_stmts(tree, symboltable):
 	if tree:
@@ -163,7 +226,8 @@ def check_functionbinding(tree, globalsymboltable):
 						"[Line {}:{}] Previous definition was here"
 						.format(dupsym.line, dupsym.col, sym.val,
 								sym.line, sym.col))
-	symboltable = globalsymboltable.copy().update(functionsymboltable)
+	symboltable = globalsymboltable.copy()
+	symboltable.update(functionsymboltable)
 	check_stmts(tree.children[4], symboltable)
 
 def check_localbinding(tree, globalsymboltable):
