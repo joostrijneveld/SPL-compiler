@@ -141,7 +141,7 @@ def parse_stmt(tokens):
 	elif tok.type == '{':
 		stmt_scope = parse_stmt_list(tokens)			
 		pop_token(tokens, '}')
-		return Node('Scope',stmt_scope)
+		return Node(Token(tok.line, tok.col, 'Scope', None),stmt_scope)
 	raise Exception("[Line {}:{}] Expected new statement, but got: {}"
 					.format(tok.line, tok.col, tok.type))
 		
@@ -159,7 +159,7 @@ def parse_exp_func(id_tok, tokens):
 	if tokens[0].type != ')':
 		t_right = parse_exp_args(tokens)
 	pop_token(tokens, ')')
-	return Node('FunCall', t_left, t_right)
+	return Node(Token(id_tok.line, id_tok.col, 'FunCall', None), t_left, t_right)
 
 def parse_exp_args(tokens):
 	t_left = parse_exp(tokens)

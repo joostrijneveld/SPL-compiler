@@ -60,30 +60,30 @@ def print_type(tree):
 		out(']')
 		
 def print_stmt(tree, depth):
-	if tree.tok == 'Scope':
+	if tree.tok.type == 'Scope':
 		out('{\n', depth)
 		if tree.children[0]:
 			print_stmt_list(tree.children[0], depth+1)
 		out('}\n', depth)
-	elif tree.tok == 'FunCall':
+	elif tree.tok.type == 'if':
+		out('if (', depth)
+		print_exp(tree.children[0])
+		out(')\n')
+		print_stmt(tree.children[1], depth + int(tree.children[1].tok.type != 'Scope'))
+		if tree.children[2]:
+			out('else\n', depth)
+			print_stmt(tree.children[2], depth + int(tree.children[2].tok.type != 'Scope'))
+	elif tree.tok.type == 'while':
+		out('while (', depth)
+		print_exp(tree.children[0])
+		out(')\n')
+		print_stmt(tree.children[1], depth + int(tree.children[1].tok.type != 'Scope'))
+	elif tree.tok.type == 'FunCall':
 		out(tree.children[0].tok.val, depth)
 		out('(')
 		if tree.children[1]:
 			print_act_args(tree.children[1])
 		out(');\n')
-	elif tree.tok.type == 'if':
-		out('if (', depth)
-		print_exp(tree.children[0])
-		out(')\n')
-		print_stmt(tree.children[1], depth + int(tree.children[1].tok != 'Scope'))
-		if tree.children[2]:
-			out('else\n', depth)
-			print_stmt(tree.children[2], depth + int(tree.children[2].tok != 'Scope'))
-	elif tree.tok.type == 'while':
-		out('while (', depth)
-		print_exp(tree.children[0])
-		out(')\n')
-		print_stmt(tree.children[1], depth + int(tree.children[1].tok != 'Scope'))
 	elif tree.tok.type == '=':
 		out('', depth)
 		print_field(tree.children[0])
@@ -98,7 +98,7 @@ def print_stmt(tree, depth):
 		out(';\n')
 		
 def print_exp(tree):
-	if tree.tok == 'FunCall':
+	if tree.tok.type == 'FunCall':
 		out(tree.children[0].tok.val)
 		out('(')
 		if tree.children[1]:
