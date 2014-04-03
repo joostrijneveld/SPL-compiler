@@ -48,7 +48,7 @@ def find_argtypes(tree):
 def update_symbols(symbols, sym, t, argtypes):
 	if sym.val in symbols:
 		dupsym = symbols[sym.val]
-		raise Exception("[Line {}:{}] Redefinition of {}\n"+
+		raise Exception("[Line {}:{}] Redefinition of {}\n"
 						"[Line {}:{}] Previous definition was here"
 						.format(dupsym.line, dupsym.col, sym.val,
 								sym.line, sym.col))
@@ -81,7 +81,7 @@ def create_functiontable(tree):
 	localsymboltable = create_table(tree.children[3])
 	for key in set(localsymboltable.keys()) & set(argsymboltable.keys()):
 		dupsym = symbols[key]
-		raise Exception("[Line {}:{}] Redefinition of {}\n"+
+		raise Exception("[Line {}:{}] Redefinition of {}\n"
 						"[Line {}:{}] Previous definition was here"
 						.format(dupsym.line, dupsym.col, sym.val,
 								sym.line, sym.col))
@@ -126,7 +126,7 @@ def type_op(fn, expected_type, ops, tree, symtab):
 		types = map(type_exp, *tree.children)
 		if expected_type and not all(t == expected_type for t in types):
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
-							+ "Types found: {}"
+							"Types found: {}"
 							.format(tree.tok.line, tree.tok.col, tree.tok.type,
 								types))
 		return expected_type
@@ -140,7 +140,7 @@ def type_exp_con(tree, symtab):
 		t1, t2 = map(type_exp, *tree.children)
 		if t2 not in [[t1], Type('List')]:
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
-							+ "Types found: {}"
+							"Types found: {}"
 							.format(tree.tok.line, tree.tok.col, tree.tok.type,
 								types))
 		return [t1]
@@ -170,18 +170,16 @@ def check_stmt(tree, symtab):
 	if tree.tok.type == 'Scope':
 		check_stmts(tree.children[0], symtab)
 	elif tree.tok.type == 'FunCall':
-		print symtab
 		type_expfunc(tree, symtab)
 		received = type_expargs(tree.children[1], symtab)
 		expected = symtab[tree.children[0].tok.val].argtype
-		print received
-		print expected
 		if received != expected:
-			raise Exception("[Line {}:{}] Incompatible argument types.\n"
-							+ "Types expected: {}\n"
-							+ "Types found: {}"
+			raise Exception("[Line {}:{}] Incompatible argument types "
+							"for function '{}'.\n"
+							"Types expected: {}\n"
+							"Types found: {}"
 							.format(tree.tok.line, tree.tok.col,
-								expected, received))
+								tree.children[0].tok.val, expected, received))
 	# 	out(tree.children[0].tok.val, depth)
 	# 	out('(')
 	# 	if tree.children[1]:
@@ -222,7 +220,7 @@ def check_functionbinding(tree, globalsymboltable):
 	functionsymboltable = create_functiontable(tree)
 	for key in set(functionsymboltable.keys()) & set(globalsymboltable.keys()):
 		dupsym = symbols[key]
-		sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"+
+		sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"
 						"[Line {}:{}] Previous definition was here"
 						.format(dupsym.line, dupsym.col, sym.val,
 								sym.line, sym.col))
