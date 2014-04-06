@@ -12,7 +12,7 @@ class Type:
 	
 	@staticmethod
 	def from_node(tree):
-		if tree.tok.type in ['Bool', 'Int']:
+		if tree.tok.type in ['Bool', 'Int', 'Void']:
 			return Type(tree.tok.type)
 		elif tree.tok.type == 'id':
 			return Type(tree.tok.val)
