@@ -181,10 +181,10 @@ def type_expargs(tree, symtab):
 def type_expfunc(tree, symtab):
 	return type_id(tree.children[0], symtab)
 
-def check_stmt(tree, symtab):	
+def check_stmt(tree, symtab, rettype):	
 	''' expects a tree with a statement node as root '''
 	if tree.tok.type == 'Scope':
-		check_stmts(tree.children[0], symtab)
+		check_stmts(tree.children[0], symtab, rettype)
 	elif tree.tok.type == 'FunCall':
 		type_expfunc(tree, symtab) # needed to confirm the id definition
 		received = type_expargs(tree.children[1], symtab)
@@ -202,31 +202,34 @@ def check_stmt(tree, symtab):
 			raise Exception("[Line {}:{}] Incompatible condition type\n"
 							"  Expected expression of type Bool, but got {}"
 							.format(tree.tok.line, tree.tok.col, condition))
-		check_stmt(tree.children[1], symtab)
+		check_stmt(tree.children[1], symtab, rettype)
 		if tree.tok.type == 'if' and tree.children[2]: # for 'else'-clause
-			check_stmt(tree.children[2], symtab)
+			check_stmt(tree.children[2], symtab, rettype)
 	elif tree.tok.type == '=':
 		idtype = type_id(tree.children[0], symtab)
 		exptype = type_exp(tree.children[1], symtab)
 		if idtype != exptype:
 			raise Exception("[Line {}:{}] Invalid assignment for id {}\n"
 							"  Expected expression of type: {}\n"
-							"  But got: {}"
+							"  But got value of type: {}"
 							.format(tree.tok.line, tree.tok.col,
 								tree.children[0].tok.val, idtype, exptype))
-	# elif tree.tok.type == 'return':
-	# 	out('return', depth)
-	# 	if tree.children[0]:
-	# 		out(' ')
-	# 		print_exp(tree.children[0])
-	# 	out(';\n')
+	elif tree.tok.type == 'return':
+		exptype = type_exp(tree.children[0], symtab)
+		if rettype != exptype:
+			raise Exception("[Line {}:{}] Invalid return type\n"
+							"  Function is of type: {}\n"
+							"  But returns value of type: {}"
+							.format(tree.tok.line, tree.tok.col,
+								rettype, exptype))
 	
-def check_stmts(tree, symboltable):
+def check_stmts(tree, symboltable, rettype):
 	if tree:
-		check_stmt(tree.children[0], symboltable)
-		check_stmts(tree.children[1], symboltable)
+		check_stmt(tree.children[0], symboltable, rettype)
+		check_stmts(tree.children[1], symboltable, rettype)
 
 def check_functionbinding(tree, globalsymboltable):
+	rettype = globalsymboltable[tree.children[1].tok.val].type
 	functionsymboltable = create_functiontable(tree)
 	for key in set(functionsymboltable.keys()) & set(globalsymboltable.keys()):
 		dupsym = symbols[key]
@@ -236,7 +239,7 @@ def check_functionbinding(tree, globalsymboltable):
 							sym.val, sym.line, sym.col))
 	symboltable = globalsymboltable.copy()
 	symboltable.update(functionsymboltable)
-	check_stmts(tree.children[4], symboltable)
+	check_stmts(tree.children[4], symboltable, rettype)
 
 def check_localbinding(tree, globalsymboltable):
 	if not tree:
@@ -249,4 +252,3 @@ def check_binding(tree, globalsymboltable=dict()):
 	globalsymboltable.update(create_table(tree))
 	print_symboltable(globalsymboltable)
 	check_localbinding(tree, globalsymboltable)
-	
