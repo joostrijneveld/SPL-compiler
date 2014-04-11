@@ -263,15 +263,20 @@ def check_functionbinding(tree, globalsymboltable):
 	rettype = globalsymboltable[tree.children[1].tok.val].type
 	functionsymboltable = create_functiontable(tree)
 	for key in set(functionsymboltable.keys()) & set(globalsymboltable.keys()):
-		dupsym = symbols[key]
+		dupsym = functionsymboltable[key]
 		sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"
 						"[Line {}:{}] Previous definition was here"
-						.format(dupsym.line, dupsym.col,
-							sym.val, sym.line, sym.col))
+						.format(dupsym.line, dupsym.col, key,
+							globalsymboltable[key].line, globalsymboltable[key].col))
 	symboltable = globalsymboltable.copy()
 	symboltable.update(functionsymboltable)
 	print_symboltable(symboltable)
-	check_stmts(tree.children[4], symboltable, rettype)
+	returned = check_stmts(tree.children[4], symboltable, rettype)
+	if not returned and not rettype == Type('Void'):
+		raise Exception("[Line {}:{}] Missing return statement "
+						"in a non-Void function"
+						.format(tree.children[1].tok.line,
+								tree.children[1].tok.col))
 
 def check_localbinding(tree, globalsymboltable):
 	if not tree:
