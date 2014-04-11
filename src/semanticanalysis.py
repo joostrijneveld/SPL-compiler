@@ -26,11 +26,31 @@ class Type:
 		return self.value
 		
 	def __eq__(self, other):
+		raise Exception("Foo")
 		return self.value == other.value
 		
 	def __ne__(self, other):
+		raise Exception("Bar")
 		return self.value != other.value
 		
+	def __ge__(self, other):
+		if type(self.value) is str and self.value not in ['Int', 'Bool', 'Void']:
+			return other.value != 'Void'
+
+		for t in [list, tuple]:
+			if type(self.value) is t:
+				if type(other.value) is t:
+					return all(s >= o
+						for s, o in map(Type, zip(self.value, other.value)))
+				return False
+			if type(other.value) is t: # self is not list/tuple at this point
+				return False
+		
+		return self.value == other.value # self.value is in [Int, Bool, Void]
+			
+	def __le__(self, other):
+		return other >= self
+
 def print_symboltable(symboltable):
 	print '='*62
 	print ("{0: <12} {1: <15} {2: <15} {3: <20}"
@@ -124,6 +144,7 @@ def type_exp_base(tree, symtab):
 	elif tree.tok.type == '[]':
 		return Type('List')
 	elif tree.tok.type == 'FunCall':
+		check_funcall(tree, symtab)
 		return type_expfunc(tree, symtab)
 	elif tree.tok.type == ',':
 		return (type_exp(tree.children[0]), type_exp(tree.children[1]))
@@ -179,7 +200,21 @@ def type_expargs(tree, symtab):
 			+ type_expargs(tree.children[1], symtab))
 
 def type_expfunc(tree, symtab):
+	print tree
 	return type_id(tree.children[0], symtab)
+
+def check_funcall(tree, symtab):
+	received = type_expargs(tree.children[1], symtab)
+	expected = symtab[tree.children[0].tok.val].argtype
+	if received != expected:
+		raise Exception("[Line {}:{}] Incompatible argument types "
+						"for function '{}'.\n"
+						"  Types expected: {}\n"
+						"  Types found: {}"
+						.format(tree.tok.line, tree.tok.col,
+							tree.children[0].tok.val,
+							", ".join(map(str, expected)),
+							", ".join(map(str, received))))
 
 def check_stmt(tree, symtab, rettype):	
 	''' expects a tree with a statement node as root '''
@@ -187,15 +222,7 @@ def check_stmt(tree, symtab, rettype):
 		check_stmts(tree.children[0], symtab, rettype)
 	elif tree.tok.type == 'FunCall':
 		type_expfunc(tree, symtab) # needed to confirm the id definition
-		received = type_expargs(tree.children[1], symtab)
-		expected = symtab[tree.children[0].tok.val].argtype
-		if received != expected:
-			raise Exception("[Line {}:{}] Incompatible argument types "
-							"  for function '{}'.\n"
-							"  Types expected: {}\n"
-							"  Types found: {}"
-							.format(tree.tok.line, tree.tok.col,
-								tree.children[0].tok.val, expected, received))
+		check_funcall(tree, symtab)
 	elif tree.tok.type == 'if' or tree.tok.type == 'while':
 		condition = type_exp(tree.children[0], symtab)
 		if condition != Type('Bool'):
@@ -239,6 +266,7 @@ def check_functionbinding(tree, globalsymboltable):
 							sym.val, sym.line, sym.col))
 	symboltable = globalsymboltable.copy()
 	symboltable.update(functionsymboltable)
+	print_symboltable(symboltable)
 	check_stmts(tree.children[4], symboltable, rettype)
 
 def check_localbinding(tree, globalsymboltable):

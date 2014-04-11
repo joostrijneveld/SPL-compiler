@@ -35,6 +35,18 @@ Int gcd_list([Int] a) {
 	if (isEmpty(a.tl)) {
 		return a.hd;
 	}
-    gcd(a.hd, gcd_list(a.tl));
-	return gcd(a.hd, gcd_list(a.tl));
+	// gcd(a.hd, gcd_list(a.tl));
+	// return gcd(a.hd, gcd_list(a.tl));
 }
+
+Int bar() {
+	print 1;
+}
+
+Void foo() {
+	return bar()
+}
+
+
+
+
