@@ -185,7 +185,7 @@ type_exp_add = partial(type_op, type_exp_mult,
 type_exp_cmp = partial(type_op, type_exp_add,
 	Type('Int'), Type('Bool'), ['<', '<=', '>', '>='])
 type_exp_eq = partial(type_op, type_exp_cmp,
-	None, Type('Bool'), ['==','!='])
+	Type('t'), Type('Bool'), ['==','!='])
 type_exp_and = partial(type_op, type_exp_eq,
 	Type('Bool'), Type('Bool'), ['&&'])
 type_exp_or = partial(type_op, type_exp_and,
@@ -231,7 +231,7 @@ def check_stmt(tree, symtab, rettype):
 		returned = False
 		if tree.tok.type == 'if' and tree.children[2]: # for 'else'-clause
 			returned = check_stmt(tree.children[2], symtab, rettype)
-		return returned and check_stmt(tree.children[1], symtab, rettype)
+		return check_stmt(tree.children[1], symtab, rettype) and returned
 	elif tree.tok.type == '=':
 		idtype = type_id(tree.children[0], symtab)
 		exptype = type_exp(tree.children[1], symtab)
@@ -265,7 +265,7 @@ def check_functionbinding(tree, globalsymboltable):
 	for key in set(functionsymboltable.keys()) & set(globalsymboltable.keys()):
 		dupsym = functionsymboltable[key]
 		sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"
-						"[Line {}:{}] Previous definition was here"
+						"[Line {}:{}] Previous definition was here\n"
 						.format(dupsym.line, dupsym.col, key,
 							globalsymboltable[key].line, globalsymboltable[key].col))
 	symboltable = globalsymboltable.copy()
