@@ -10,17 +10,39 @@ returnen moet altijd afhankelijk van type van functie.. checken?
 
 ntuples voor in de extension?
 
-# a 				>= [Int] 			is true
-# a 				>= a 				is true
-# a 				>= Int, Bool 		is true
-# a 				>= Void 			is false
+a					>= [Int] 			is true
+a					>= a 				is true
+a					>= Int, Bool 		is true
+a					>= Void 			is false
 
-# Int 				>= Bool 			is false
-# Bool 				>= Int 				is false
-# Void 				>= Void 			is true
-# Int 				>= Int 				is true
-# Bool 				>= Bool 			is true
-# Void 				>= Int 				is false (C vindt dit prima, Java niet, Clean.. vast niet)
-# Int 				>= Void 			is false
+Int 				>= Bool 			is false
+Bool 				>= Int 				is false
+Void 				>= Void 			is true
+Int 				>= Int 				is true
+Bool 				>= Bool 			is true
+Void 				>= Int 				is false (C vindt dit prima, Java niet, Clean.. vast niet)
+Int 				>= Void 			is false
 
-# Int, Bool, Void 	>= a 				is false
+Int, Bool, Void 	>= a 				is false
+a >= []		true
+[] >= a 	false
+
+Int >= []	false
+[] >= Int 	false
+
+[a] >= []	true
+[] >= [a]	true
+
+
+# returntype checken
+
+
+# Oeps
+function a a -> Int
+
+f(1, True)
+
+Int f(a x, a y) {
+	a id = 4;
+	return 1;
+}

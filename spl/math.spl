@@ -6,6 +6,7 @@ Void foo() {
     Int k = 3;
     Int l = 4;
     i = i + 1;
+    return;
 }
 
 Int abs(Int x) {
@@ -25,7 +26,7 @@ Int gcd(Int a, Int b) {
             b = a % b;
         a = temp;
     }
-    return a;
+    // return a;
 }
 
 Int gcd_list([Int] a) {
@@ -35,18 +36,6 @@ Int gcd_list([Int] a) {
 	if (isEmpty(a.tl)) {
 		return a.hd;
 	}
-	// gcd(a.hd, gcd_list(a.tl));
-	// return gcd(a.hd, gcd_list(a.tl));
+	gcd(a.hd, gcd_list(a.tl));
+	return gcd(a.hd, gcd_list(a.tl));
 }
-
-Int bar() {
-	print 1;
-}
-
-Void foo() {
-	return bar()
-}
-
-
-
-
