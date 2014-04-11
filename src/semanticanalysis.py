@@ -31,11 +31,9 @@ class Type:
 	def __ge__(self, other):
 		if type(self.value) is str and self.value not in ['Int', 'Bool', 'Void', 'List']:
 			return other.value != 'Void'
-
 		if (type(self.value) is list and other.value == 'List' or
 			type(other.value) is list and self.value == 'List'):
 			return True
-			
 		for t in [list, tuple]:
 			if type(self.value) is t:
 				if type(other.value) is t:
@@ -152,12 +150,14 @@ def type_exp_base(tree, symtab):
 def type_op(fn, in_type, out_type, ops, tree, symtab):
 	if tree.tok.type in ops:
 		types = map(partial(type_exp, symtab=symtab), tree.children)
-		if in_type and not all(in_type >= t for t in types):
+		if (in_type and not all(in_type >= t for t in types)
+			or types.count(types[0]) != len(types)):
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
-							"  Types expected: {}, {}\n"
-							"  Types found: {}\n"
-							.format(tree.tok.line, tree.tok.col,
-								tree.tok.type, in_type, in_type, types))
+							"  Types expected: {}\n"
+							"  Types found: {}"
+							.format(tree.tok.line, tree.tok.col, tree.tok.type,
+								', '.join(map(str, [in_type] * len(types))),
+								', '.join(map(str, types))))
 		return out_type
 	return fn(tree, symtab)
 
@@ -174,7 +174,7 @@ def type_exp_con(tree, symtab):
 							"  Types expected: t, [t]\n"
 							"  Types found: {}"
 							.format(tree.tok.line, tree.tok.col,
-								tree.tok.type, types))
+								tree.tok.type, ', '.join(map(str, types))))
 		return Type([t1])
 	return type_exp_unbool(tree, symtab)
 
@@ -212,8 +212,8 @@ def check_funcall(tree, symtab):
 						"  Types found: {}"
 						.format(tree.tok.line, tree.tok.col,
 							tree.children[0].tok.val,
-							", ".join(map(str, expected)),
-							", ".join(map(str, received))))
+							', '.join(map(str, expected)),
+							', '.join(map(str, received))))
 
 def check_stmt(tree, symtab, rettype):	
 	''' expects a tree with a statement node as root '''
@@ -247,7 +247,7 @@ def check_stmt(tree, symtab, rettype):
 		else:
 			exptype = type_exp(tree.children[0], symtab)
 		if not rettype >= exptype:
-			raise Exception("[Line {}:{}] Invalid return type\n"
+			raise Exception("[Line {}:{}] Invalid return-type\n"
 							"  Function is of type: {}\n"
 							"  But returns value of type: {}"
 							.format(tree.tok.line, tree.tok.col,
