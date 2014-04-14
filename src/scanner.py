@@ -31,14 +31,15 @@ class Position:
 		
 def handle_comments(f, blockcomment, p):
 	if blockcomment:
-		last_two = ''
-		while last_two != '*/':
+		last_two = collections.deque(maxlen=2)
+		while ''.join(last_two) != '*/':
 			c = f.read(1)
 			p.col += 1
 			if c == '\n':
 				p.nextline()
-			last_two += c
-			last_two = last_two[-2:]
+			last_two.append(c)
+			if ''.join(last_two) == '/*': # nested comments
+				handle_comments(f, True, p)
 	else:
 		f.readline()
 		p.nextline()
