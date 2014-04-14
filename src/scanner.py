@@ -34,12 +34,14 @@ def handle_comments(f, blockcomment, p):
 		last_two = collections.deque(maxlen=2)
 		while ''.join(last_two) != '*/':
 			c = f.read(1)
+			if not c:
+				raise Exception("Unfinished comment. Reached end of file.")
 			p.col += 1
 			if c == '\n':
 				p.nextline()
 			last_two.append(c)
-			if ''.join(last_two) == '/*': # nested comments
-				handle_comments(f, True, p)
+			# if ''.join(last_two) == '/*': # nested comments
+				# handle_comments(f, True, p)
 	else:
 		f.readline()
 		p.nextline()
