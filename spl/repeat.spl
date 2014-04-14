@@ -1,4 +1,4 @@
-[Int] repeat(a x, Int n) {
+[a] repeat(a x, Int n) {
 	if ( n == 0) {
 		return [];
 	} else {

@@ -26,7 +26,7 @@ Int gcd(Int a, Int b) {
             b = a % b;
         a = temp;
     }
-    // return a;
+    return a;
 }
 
 Int gcd_list([Int] a) {

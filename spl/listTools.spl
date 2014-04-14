@@ -8,13 +8,14 @@ Int len([a] l) {
 }
 
 /* Reverse a list */
-[a] reverse([a] l) {
-    if ( isEmpty(l) ) {
-        return [];
-    } else {
-        return reverse(l.tl) : l.hd;
-    }
-}
+// This is broken and is non-trivial to fix.
+// [a] reverse([a] l) {
+//     if ( isEmpty(l) ) {
+//         return [];
+//     } else {
+//         return reverse(l.tl) : l.hd;
+//     }
+// }
 
 /* Return the maximum of x and y */
 a max(a x, a y) {
