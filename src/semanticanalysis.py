@@ -122,15 +122,17 @@ def type_exp_field(tree, symtab):
 			return t.value[0]
 		elif tree.tok.type == '.tl':
 			return t
-		raise Exception("[Line {}:{}] Got list, but cannot apply: {}"
+		raise Exception("[Line {}:{}] Got list, but cannot apply: '{}'"
 				.format(tree.tok.line, tree.tok.col, tree.tok.type))
 	elif type(t.value) is tuple:
 		if tree.tok.type == '.fst':
 			return t.value[0]
 		elif tree.tok.type == '.snd':
 			return t.value[1]
-		raise Exception("[Line {}:{}] Got tuple, but cannot apply: {}"
+		raise Exception("[Line {}:{}] Got tuple, but cannot apply: '{}'"
 						.format(tree.tok.line, tree.tok.col, tree.tok.type))
+	raise Exception("[Line {}:{}] Cannot apply '{}' to symbol of type {} "
+			.format(tree.tok.line, tree.tok.col, tree.tok.type, t))
 	
 def type_exp_base(tree, symtab):
 	if tree.tok.type == 'int':
@@ -140,8 +142,9 @@ def type_exp_base(tree, symtab):
 	elif tree.tok.type == '[]':
 		return Type('List')
 	elif tree.tok.type == 'FunCall':
+		t = type_expfunc(tree, symtab) # includes existence-check
 		check_funcall(tree, symtab)
-		return type_expfunc(tree, symtab)
+		return t
 	elif tree.tok.type == ',':
 		return Type((type_exp(tree.children[0], symtab),
 			type_exp(tree.children[1], symtab)))
@@ -173,9 +176,9 @@ def type_exp_con(tree, symtab):
 		if t2 not in [Type([t1]), Type('List')]:
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
 							"  Types expected: t, [t]\n"
-							"  Types found: {}"
+							"  Types found: {}, {}"
 							.format(tree.tok.line, tree.tok.col,
-								tree.tok.type, ', '.join(map(str, types))))
+								tree.tok.type, t1, t2))
 		return Type([t1])
 	return type_exp_unbool(tree, symtab)
 
@@ -271,7 +274,7 @@ def check_functionbinding(tree, globalsymboltable):
 							globalsymboltable[key].line, globalsymboltable[key].col))
 	symboltable = globalsymboltable.copy()
 	symboltable.update(functionsymboltable)
-	print_symboltable(symboltable)
+	# print_symboltable(symboltable)
 	returned = check_stmts(tree.children[4], symboltable, rettype)
 	if not returned and not rettype == Type('Void'):
 		raise Exception("[Line {}:{}] Missing return statement "
@@ -288,5 +291,5 @@ def check_localbinding(tree, globalsymboltable):
 
 def check_binding(tree, globalsymboltable=dict()):
 	globalsymboltable.update(create_table(tree))
-	print_symboltable(globalsymboltable)
+	# print_symboltable(globalsymboltable)
 	check_localbinding(tree, globalsymboltable)
