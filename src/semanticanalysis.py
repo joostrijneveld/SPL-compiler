@@ -145,7 +145,7 @@ def type_exp_base(tree, symtab):
 		check_funcall(tree, symtab)
 		return type_expfunc(tree, symtab)
 	elif tree.tok.type == ',':
-		return (type_exp(tree.children[0]), type_exp(tree.children[1]))
+		return Type((type_exp(tree.children[0]), type_exp(tree.children[1])))
 	else:
 		return type_exp_field(tree,symtab)
 		
