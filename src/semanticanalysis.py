@@ -143,7 +143,8 @@ def type_exp_base(tree, symtab):
 		check_funcall(tree, symtab)
 		return type_expfunc(tree, symtab)
 	elif tree.tok.type == ',':
-		return Type((type_exp(tree.children[0]), type_exp(tree.children[1])))
+		return Type((type_exp(tree.children[0], symtab),
+			type_exp(tree.children[1], symtab)))
 	else:
 		return type_exp_field(tree,symtab)
 		
@@ -168,7 +169,7 @@ type_exp_unbool = partial(type_op, type_exp_unint,
 
 def type_exp_con(tree, symtab):
 	if tree.tok.type == ':':
-		t1, t2 = map(type_exp, *tree.children)
+		t1, t2 = map(partial(type_exp, symtab=symtab), tree.children)
 		if t2 not in [Type([t1]), Type('List')]:
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
 							"  Types expected: t, [t]\n"
@@ -233,14 +234,14 @@ def check_stmt(tree, symtab, rettype):
 			returned = check_stmt(tree.children[2], symtab, rettype)
 		return check_stmt(tree.children[1], symtab, rettype) and returned
 	elif tree.tok.type == '=':
-		idtype = type_id(tree.children[0], symtab)
+		fieldtype = type_exp_field(tree.children[0], symtab)
 		exptype = type_exp(tree.children[1], symtab)
-		if not idtype >= exptype:
+		if not fieldtype >= exptype:
 			raise Exception("[Line {}:{}] Invalid assignment for id {}\n"
 							"  Expected expression of type: {}\n"
 							"  But got value of type: {}"
 							.format(tree.tok.line, tree.tok.col,
-								tree.children[0].tok.val, idtype, exptype))
+								tree.children[0].tok.val, fieldtype, exptype))
 	elif tree.tok.type == 'return':
 		if not tree.children[0]:
 			exptype = Type('Void')

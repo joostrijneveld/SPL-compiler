@@ -11,6 +11,7 @@ def help():
 
 def main():
 	# sys.tracebacklimit = 0 # so that we only show our own exceptions
+	sys.setrecursionlimit(10000) # since were compiling recursively..
 	if len(sys.argv) != 2:
 		help()
 		return
