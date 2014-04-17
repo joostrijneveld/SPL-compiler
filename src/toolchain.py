@@ -17,8 +17,8 @@ def main():
 		return
 	tokens = scanner.scan_spl(sys.argv[1])
 	tree = parser.build_tree(tokens)
-	print str(tree)
-	prettyprinter.print_tree(tree)
+	# print str(tree)
+	# prettyprinter.print_tree(tree)
 	predefined = {
 		'isEmpty' 	: Symbol(0, 0, Type('Bool'), [Type([Type('t')])]),
 		'print' 	: Symbol(0, 0, Type('Void'), [Type('t')])

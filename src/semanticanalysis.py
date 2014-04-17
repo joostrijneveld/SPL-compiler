@@ -26,26 +26,19 @@ class Type:
 		return repr(self.value)
 		
 	def __eq__(self, other):
-		return self.value == other.value
-		
-	def __ge__(self, other):
-		if type(self.value) is str and self.value not in ['Int', 'Bool', 'Void', 'List']:
-			return other.value != 'Void'
 		if (type(self.value) is list and other.value == 'List' or
 			type(other.value) is list and self.value == 'List'):
 			return True
+		
 		for t in [list, tuple]:
 			if type(self.value) is t:
 				if type(other.value) is t:
-					return all(s >= o for s, o in zip(self.value, other.value))
+					return all(s == o for s, o in zip(self.value, other.value))
 				return False
 			if type(other.value) is t: # self is not list/tuple at this point
 				return False
 		
-		return self.value == other.value # self.value is in [Int, Bool, Void, List]
-			
-	def __le__(self, other):
-		return other >= self
+		return self.value == other.value
 
 def print_symboltable(symboltable):
 	print '='*62
@@ -143,32 +136,32 @@ def type_exp_base(tree, symtab):
 		return Type('List')
 	elif tree.tok.type == 'FunCall':
 		t = type_expfunc(tree, symtab) # includes existence-check
-		check_funcall(tree, symtab)
-		return t
+		gentab = check_funcall(tree, symtab)
+		return apply_gentab(t, gentab)
 	elif tree.tok.type == ',':
 		return Type((type_exp(tree.children[0], symtab),
 			type_exp(tree.children[1], symtab)))
 	else:
 		return type_exp_field(tree,symtab)
 		
-def type_op(fn, in_type, out_type, ops, tree, symtab):
+def type_op(fn, in_types, out_type, ops, tree, symtab):
 	if tree.tok.type in ops:
-		types = map(partial(type_exp, symtab=symtab), tree.children)
-		if (in_type and not all(in_type >= t for t in types)
-			or types.count(types[0]) != len(types)):
+		rev_types = map(partial(type_exp, symtab=symtab), tree.children)
+		gentab = dict()
+		if not all(apply_generics(e, r, gentab) for e, r in zip(in_types, rev_types)):
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
 							"  Types expected: {}\n"
 							"  Types found: {}"
 							.format(tree.tok.line, tree.tok.col, tree.tok.type,
-								', '.join(map(str, [in_type] * len(types))),
-								', '.join(map(str, types))))
+								', '.join(map(str, in_types)),
+								', '.join(map(str, rev_types))))
 		return out_type
 	return fn(tree, symtab)
 
 type_exp_unint = partial(type_op, type_exp_base,
-	Type('Int'), Type('Int'), ['-'])
+	[Type('Int')], Type('Int'), ['-'])
 type_exp_unbool = partial(type_op, type_exp_unint,
-	Type('Bool'), Type('Bool'), ['!'])
+	[Type('Bool')], Type('Bool'), ['!'])
 
 def type_exp_con(tree, symtab):
 	if tree.tok.type == ':':
@@ -183,17 +176,17 @@ def type_exp_con(tree, symtab):
 	return type_exp_unbool(tree, symtab)
 
 type_exp_mult = partial(type_op, type_exp_con,
-	Type('Int'), Type('Int'), ['*', '/', '%'])
+	[Type('Int'), Type('Int')], Type('Int'), ['*', '/', '%'])
 type_exp_add = partial(type_op, type_exp_mult,
-	Type('Int'), Type('Int'), ['+', '-'])
+	[Type('Int'), Type('Int')], Type('Int'), ['+', '-'])
 type_exp_cmp = partial(type_op, type_exp_add,
-	Type('Int'), Type('Bool'), ['<', '<=', '>', '>='])
+	[Type('Int'), Type('Int')], Type('Bool'), ['<', '<=', '>', '>='])
 type_exp_eq = partial(type_op, type_exp_cmp,
-	Type('t'), Type('Bool'), ['==','!='])
+	[Type('t'), Type('t')], Type('Bool'), ['==','!='])
 type_exp_and = partial(type_op, type_exp_eq,
-	Type('Bool'), Type('Bool'), ['&&'])
+	[Type('Bool'), Type('Bool')], Type('Bool'), ['&&'])
 type_exp_or = partial(type_op, type_exp_and,
-	Type('Bool'), Type('Bool'), ['||'])
+	[Type('Bool'), Type('Bool')], Type('Bool'), ['||'])
 type_exp = type_exp_or
 
 def type_expargs(tree, symtab):
@@ -206,10 +199,66 @@ def type_expargs(tree, symtab):
 def type_expfunc(tree, symtab):
 	return type_id(tree.children[0], symtab)
 
+def unify(t1, t2):
+	''' attempts to unify t1 and t2 (necessary for empty lists) '''
+	if type(t1.value) is tuple and type(t2.value) is tuple:
+		left = unify(t1.value[0], t2.value[0])
+		right = unify(t1.value[1], t2.value[1])
+		if not (left and right):
+			return None
+		return Type((left, right))
+	if type(t1.value) is list and type(t2.value) is list:
+		result = unify(t1.value[0], t2.value[0])
+		if not result:
+			return None
+		return Type([result])
+	if t1 == t2:
+		if t1.value == 'List':
+			return t2
+		return t1
+	return None
+
+def apply_gentab(t, gentab):
+	'''replaces generics that occur in t with their literal type from gentab'''
+	if t.value in ['Int', 'Bool']:
+		return t
+	if type(t.value) is str:
+		if t.value not in gentab:
+			raise Exception("TODO FIX DEZE EXCEPTION! JE GENERIC RETURNTYPE KOMT NIET VOOR")
+		return gentab[t.value]
+	if type(t.value) is tuple:
+		return Type((apply_gentab(t.value[0], gentab),
+				apply_gentab(t.value[1], gentab)))
+	if type(t.value) is list:
+		return Type([apply_gentab(t.value[0], gentab)])
+
+def apply_generics(gen_type, lit_type, gentab):
+	if gen_type.value in ['Int', 'Bool']:
+		return gen_type == lit_type
+	if type(gen_type.value) is str:
+		if gen_type.value in gentab:
+			result = unify(gentab[gen_type.value], lit_type)
+			if not result:
+				return False
+			gentab[gen_type.value] = result
+		else:
+			gentab[gen_type.value] = lit_type
+		return True
+	if lit_type.value == 'List': # we have checked that it's not a generic
+		return type(gen_type.value) is list
+	for t in [list, tuple]:
+		if type(gen_type.value) is t:
+			if type(lit_type.value) is t:
+				return all(apply_generics(s, o, gentab) for s, o in zip(gen_type.value, lit_type.value))
+			return False
+		if type(lit_type.value) is t: # gen_type is not list/tuple at this point
+			return False
+
 def check_funcall(tree, symtab):
 	received = type_expargs(tree.children[1], symtab)
 	expected = symtab[tree.children[0].tok.val].argtypes
-	if not all(e >= r for e, r in zip(expected, received)):
+	gentab = dict()
+	if not all(apply_generics(e, r, gentab) for e, r in zip(expected, received)):
 		raise Exception("[Line {}:{}] Incompatible argument types "
 						"for function '{}'.\n"
 						"  Types expected: {}\n"
@@ -218,6 +267,7 @@ def check_funcall(tree, symtab):
 							tree.children[0].tok.val,
 							', '.join(map(str, expected)),
 							', '.join(map(str, received))))
+	return gentab
 
 def check_stmt(tree, symtab, rettype):	
 	''' expects a tree with a statement node as root '''
@@ -228,7 +278,7 @@ def check_stmt(tree, symtab, rettype):
 		check_funcall(tree, symtab)
 	elif tree.tok.type == 'if' or tree.tok.type == 'while':
 		condition = type_exp(tree.children[0], symtab)
-		if not condition <= Type('Bool'):
+		if not condition == Type('Bool'):
 			raise Exception("[Line {}:{}] Incompatible condition type\n"
 							"  Expected expression of type Bool, but got {}"
 							.format(tree.tok.line, tree.tok.col, condition))
@@ -239,7 +289,7 @@ def check_stmt(tree, symtab, rettype):
 	elif tree.tok.type == '=':
 		fieldtype = type_exp_field(tree.children[0], symtab)
 		exptype = type_exp(tree.children[1], symtab)
-		if not fieldtype >= exptype:
+		if not fieldtype == exptype:
 			raise Exception("[Line {}:{}] Invalid assignment for id {}\n"
 							"  Expected expression of type: {}\n"
 							"  But got value of type: {}"
@@ -250,7 +300,7 @@ def check_stmt(tree, symtab, rettype):
 			exptype = Type('Void')
 		else:
 			exptype = type_exp(tree.children[0], symtab)
-		if not rettype >= exptype:
+		if not rettype == exptype:
 			raise Exception("[Line {}:{}] Invalid return-type\n"
 							"  Function is of type: {}\n"
 							"  But returns value of type: {}"
@@ -263,6 +313,21 @@ def check_stmts(tree, symboltable, rettype):
 		returned = check_stmt(tree.children[0], symboltable, rettype)
 		return returned or check_stmts(tree.children[1], symboltable, rettype)
 
+def check_vardecl(tree, symtab):
+	vartype = Type.from_node(tree.children[0])
+	exptype = type_exp(tree.children[2], symtab)
+	if not vartype == exptype:
+		raise Exception("[Line {}:{}] Invalid assignment for id {}\n"
+						"  Expected expression of type: {}\n"
+						"  But got value of type: {}"
+						.format(tree.children[1].tok.line, tree.children[1].tok.col,
+							tree.children[1].tok.val, vartype, exptype))
+		
+def check_vardecls(tree, symboltable):
+	if tree:
+		check_vardecl(tree.children[0], symboltable)
+		check_vardecls(tree.children[1], symboltable)
+
 def check_functionbinding(tree, globalsymboltable):
 	rettype = globalsymboltable[tree.children[1].tok.val].type
 	functionsymboltable = create_functiontable(tree)
@@ -274,7 +339,8 @@ def check_functionbinding(tree, globalsymboltable):
 							globalsymboltable[key].line, globalsymboltable[key].col))
 	symboltable = globalsymboltable.copy()
 	symboltable.update(functionsymboltable)
-	# print_symboltable(symboltable)
+	print_symboltable(symboltable)
+	check_vardecls(tree.children[3], symboltable)
 	returned = check_stmts(tree.children[4], symboltable, rettype)
 	if not returned and not rettype == Type('Void'):
 		raise Exception("[Line {}:{}] Missing return statement "
@@ -291,5 +357,5 @@ def check_localbinding(tree, globalsymboltable):
 
 def check_binding(tree, globalsymboltable=dict()):
 	globalsymboltable.update(create_table(tree))
-	# print_symboltable(globalsymboltable)
+	print_symboltable(globalsymboltable)
 	check_localbinding(tree, globalsymboltable)
