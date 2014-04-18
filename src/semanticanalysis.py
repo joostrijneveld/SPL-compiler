@@ -137,7 +137,7 @@ def type_exp_base(tree, symtab):
 	elif tree.tok.type == 'FunCall':
 		t = type_expfunc(tree, symtab) # includes existence-check
 		gentab = check_funcall(tree, symtab)
-		return apply_gentab(t, gentab)
+		return apply_gentab(tree, t, gentab)
 	elif tree.tok.type == ',':
 		return Type((type_exp(tree.children[0], symtab),
 			type_exp(tree.children[1], symtab)))
@@ -218,19 +218,22 @@ def unify(t1, t2):
 		return t1
 	return None
 
-def apply_gentab(t, gentab):
+def apply_gentab(tree, t, gentab):
 	'''replaces generics that occur in t with their literal type from gentab'''
 	if t.value in ['Int', 'Bool']:
 		return t
 	if type(t.value) is str:
 		if t.value not in gentab:
-			raise Exception("TODO FIX DEZE EXCEPTION! JE GENERIC RETURNTYPE KOMT NIET VOOR")
+			raise Exception("[Line {}:{}] Generic return type {} is not bound "
+							"by arguments for function '{}', so cannot be resolved."
+							.format(tree.tok.line, tree.tok.col, t,
+								tree.children[0].tok.val))
 		return gentab[t.value]
 	if type(t.value) is tuple:
-		return Type((apply_gentab(t.value[0], gentab),
-				apply_gentab(t.value[1], gentab)))
+		return Type((apply_gentab(tree, t.value[0], gentab),
+				apply_gentab(tree, t.value[1], gentab)))
 	if type(t.value) is list:
-		return Type([apply_gentab(t.value[0], gentab)])
+		return Type([apply_gentab(tree, t.value[0], gentab)])
 
 def apply_generics(gen_type, lit_type, gentab):
 	if gen_type.value in ['Int', 'Bool']:
@@ -258,7 +261,9 @@ def check_funcall(tree, symtab):
 	received = type_expargs(tree.children[1], symtab)
 	expected = symtab[tree.children[0].tok.val].argtypes
 	gentab = dict()
-	if not all(apply_generics(e, r, gentab) for e, r in zip(expected, received)):
+	if (not len(expected) == len(received) or
+		not all(apply_generics(e, r, gentab)
+			for e, r in zip(expected, received))):
 		raise Exception("[Line {}:{}] Incompatible argument types "
 						"for function '{}'.\n"
 						"  Types expected: {}\n"
@@ -301,7 +306,7 @@ def check_stmt(tree, symtab, rettype):
 		else:
 			exptype = type_exp(tree.children[0], symtab)
 		if not rettype == exptype:
-			raise Exception("[Line {}:{}] Invalid return-type\n"
+			raise Exception("[Line {}:{}] Invalid return type\n"
 							"  Function is of type: {}\n"
 							"  But returns value of type: {}"
 							.format(tree.tok.line, tree.tok.col,
