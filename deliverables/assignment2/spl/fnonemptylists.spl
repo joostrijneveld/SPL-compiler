@@ -2,5 +2,11 @@
 	return x;
 }
 
+a bar([a] x) {
+	return x.hd;
+}
+
+
 [Int] a = foo(5 : []); // This should go right
 [Int] b = foo([]);     // This will go right, because [None] fits in [Int]
+Int c = bar([]);       // Similarly, this should work too

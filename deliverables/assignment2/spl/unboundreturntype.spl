@@ -8,4 +8,4 @@ Void call_foo() {
 }
 
 //[Int] c = foo();    // should go wrong since [a] is 
-		      // used here, but [a] is unbounded
+		      // used here, but a is not bound
