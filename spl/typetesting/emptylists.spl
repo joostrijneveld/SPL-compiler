@@ -2,4 +2,5 @@
 // [Int] b =  [] : []; // dit moet fout gaan
 [[Int]] c =  [] : []; // dit moet goed gaan
 [[a]] d =  [] : []; // dit moet goed gaan
-[[a]] e =  (5 : []) : []; // dit moet fout gaan want a != Int
+//[[a]] e =  (5 : []) : []; // dit moet fout gaan want a != Int
+[([Bool], [Int])] f = ([],5:[]) : (True:[],[]) : []; // slim ding van Ramon
