@@ -270,8 +270,12 @@ def apply_generics(gen_type, lit_type, gentab):
 			return False
 
 def check_funcall(tree, symtab):
-	received = type_expargs(tree.children[1], symtab)
 	expected = symtab[tree.children[0].tok.val].argtypes
+	if expected == None:
+		raise Exception("[Line {}:{}] '{}' is a variable, not a function."
+						.format(tree.tok.line, tree.tok.col,
+							tree.children[0].tok.val))
+	received = type_expargs(tree.children[1], symtab)
 	if not len(expected) == len(received):
 		raise Exception("[Line {}:{}] Incompatible number of arguments "
 						"for function '{}'.\n"
