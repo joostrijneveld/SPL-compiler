@@ -231,7 +231,7 @@ def type_expfunc(tree, symtab):
 
 def apply_gentab(tree, t, gentab):
 	'''replaces generics that occur in t with their literal type from gentab'''
-	if t.value in ['Int', 'Bool']:
+	if t.value in ['Int', 'Bool', 'Void']:
 		return t
 	if type(t.value) is str:
 		if t.value not in gentab:
@@ -269,10 +269,17 @@ def apply_generics(gen_type, lit_type, gentab):
 def check_funcall(tree, symtab):
 	received = type_expargs(tree.children[1], symtab)
 	expected = symtab[tree.children[0].tok.val].argtypes
+	if not len(expected) == len(received):
+		raise Exception("[Line {}:{}] Incompatible number of arguments "
+						"for function '{}'.\n"
+						"  Arguments expected: {}\n"
+						"  Arguments found: {}"
+						.format(tree.tok.line, tree.tok.col,
+							tree.children[0].tok.val,
+							len(expected), len(received)))
 	gentab = dict()
-	if (not len(expected) == len(received) or
-		not all(apply_generics(e, r, gentab)
-			for e, r in zip(expected, received))):
+	if (not all(apply_generics(e, r, gentab)
+		for e, r in zip(expected, received))):
 		raise Exception("[Line {}:{}] Incompatible argument types "
 						"for function '{}'.\n"
 						"  Types expected: {}\n"
