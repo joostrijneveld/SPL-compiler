@@ -1,0 +1,27 @@
+[a] repeatn(a x, Int n) {
+	if (n <= 0) {
+		return [];
+	}
+	return x : repeatn(x, n - 1); 
+}
+
+[a] take([a] x, Int n) {
+	if (n <= 0 || isEmpty(x)) {
+		return [];
+	}
+	return x.hd : take(x.tl, n - 1); 
+}
+
+[a] flatten([[a]] x) {
+	if (isEmpty(x)) {
+		return [];
+	}
+	//return x; // Must obviously go wrong
+	return flatten(x.hd : []) : flatten(x.tl);
+}
+
+Int main() {
+	repeatn(5, 5);
+
+	return 1;
+}
