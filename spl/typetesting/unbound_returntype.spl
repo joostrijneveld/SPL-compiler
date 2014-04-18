@@ -1,9 +1,0 @@
-[a] foo() {
-	return [];
-}
-
-Void call_foo() {
-	foo(); // gaat toch goed, omdat het return type niet wordt gebruikt
-}
-
-[Int] c = foo(); // gaat fout omdat [a] ongebonden is en wordt gebruikt

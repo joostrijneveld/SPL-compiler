@@ -1,0 +1,6 @@
+[b] foo([b] x) {
+	return x;
+}
+
+[Int] a = foo(5 : []); // This should go right
+[Int] b = foo([]);     // This will go right, because [None] fits in [Int]

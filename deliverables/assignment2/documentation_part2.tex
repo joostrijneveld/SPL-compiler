@@ -5,6 +5,12 @@
 \usepackage[colorlinks=true, linkcolor=black, urlcolor=black, citecolor=black]{hyperref} % to make labels clickable
 \usepackage{listings} % for grammar rules
 
+% set lstset for SPL
+\lstset{language=C}
+\lstset{
+ numbers=left, morekeywords={Void, Int, Bool, .fst, .snd, .hd, .tl}
+ }
+
 \title{Compiler Construction part 2: Semantic analysis}
 \author{Joost Rijneveld, s4048911\\Koen van Ingen, s4058038}
 \date{}
@@ -31,7 +37,7 @@ Our submission contains the following files:
 \newpage % vooruit dan :)
 \section{Used grammar}
 % TODO misschien wat netter formatten? Ook language=haskell moet beter kunnen
-\lstinputlisting[language=haskell]{../../grammar.txt}
+\lstinputlisting[numbers=none, language=haskell]{../../grammar.txt}
 
 \newpage % vooruit dan :)
 \section{Scoping rules}
@@ -45,6 +51,170 @@ Our submission contains the following files:
 \newpage % vooruit dan :)
 \section{Example tests}
 \label{examples}
+
+\subsection{General function application}
+The file {\tt fnapplication.spl} is an example of a program that tests the function application and whether the number and type of arguments of the function call matches with the ones in the header.
+\lstinputlisting{spl/fnapplication.spl}
+The call at line 7 is here the only correct function call in this program: only in this case do the number and type of arguments match. In the other cases, we get an error: 
+
+% Verbatim doen hier?
+\begin{verbatim}
+Exception: [Line 8:2] Incompatible number of arguments for function 'foo'.
+  Arguments expected: 1
+    Arguments found: 0
+\end{verbatim}
+
+As a result, we get the following pretty-printed program and symbol table: 
+
+\begin{verbatim}
+Void foo(Int x)
+{
+        [Int] xs = (x : []);
+        return;
+}
+Void call_foo()
+{
+        foo(5);
+}
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:6          foo             'Void'          'Int'               
+0:0          isEmpty         'Bool'          ['t']               
+6:6          call_foo        'Void'                              
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          isEmpty         'Bool'          ['t']               
+1:14         x               'Int'           None                
+0:0          print           'Void'          't'                 
+2:8          xs              ['Int']         None                
+1:6          foo             'Void'          'Int'               
+6:6          call_foo        'Void'                              
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:6          foo             'Void'          'Int'               
+0:0          isEmpty         'Bool'          ['t']               
+6:6          call_foo        'Void'                              
+==============================================================
+\end{verbatim}
+In this output refers the first table to the global symbol table, the second to the function {\tt foo()} (which off course also includes all the global symbols). The third table refers to the function {\tt call\_foo()}
+
+\subsection{Assignments with empty lists}
+Because empty lists can cause a lot of troubles with type checking (since can match on most generic types, but not all of them), we thought it might be a good idea to include some test variable declarations with empty lists as an example program. This can be found in {\tt emptylists.spl}. 
+\lstinputlisting{spl/emptylists.spl}
+The first one should obviously go right, because every element in the list can be map to a list of integers, which will result in a list of list of integers. The second one, this is not the case: we expect a list of integers, but a list with 2 empty lists will be mapped to a list of a list of something, and thus we get an error here: 
+\begin{verbatim}
+Exception: [Line 2:7] Invalid assignment for id b
+  Expected expression of type: ['Int']
+    But got value of type: [[None]]
+\end{verbatim}
+The examples on line 4 and 5 should go right, since in both cases, the empty list can be mapped to either a list of list of Int or a generic list of list of `a'. Example 5 will fail because ???
+
+This is the pretty-printed output and the symbtol table of this program: 
+\begin{verbatim}
+[[Int]] a = ([] : ((5 : []) : []));
+[[Int]] c = ([] : []);
+[[a]] d = ([] : []);
+[([Bool],[Int])] f = (([], (5 : [])) : (((True : []), []) : []));
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+1:9          a               [['Int']]       None                
+3:9          c               [['Int']]       None                
+0:0          isEmpty         'Bool'          ['t']               
+4:7          d               [['a']]         None                
+0:0          print           'Void'          't'                 
+==============================================================
+\end{verbatim}
+
+\subsection{Function application with empty lists}
+In our next example, we will combine our function application with the empty lists. The code can be found in {\tt fnonemptylists.spl}.
+\lstinputlisting{spl/fnonemptylists.spl}
+The call on line 5 will go right, because we give this function a list of integers, which is possible because this can be mapped to the more generic type `b'. As a result, we get a lists of integers back, which fits exactly in our variable `a' that is of type [Int]. For the call on line 6, the same holds, since the empty list fits in a list of integers. 
+
+This is the pretty-printed output and the symbol table of this program: 
+\begin{verbatim}
+[b] foo([b] x)
+{
+        return x;
+}
+[Int] a = foo((5 : []));
+[Int] b = foo([]);
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+5:7          a               ['Int']         None                
+6:7          b               ['Int']         None                
+0:0          isEmpty         'Bool'          ['t']               
+1:5          foo             ['b']           ['b']               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+5:7          a               ['Int']         None                
+6:7          b               ['Int']         None                
+0:0          isEmpty         'Bool'          ['t']               
+0:0          print           'Void'          't'                 
+1:13         x               ['b']           None                
+1:5          foo             ['b']           ['b']               
+==============================================================
+\end{verbatim}
+
+\subsection{Unbounded return types}
+With this example, we want to show what happens when you try to apply an unbounded return type to a concrete type. The code can be found in {\tt unboundreturntype.spl}. 
+\lstinputlisting{spl/unboundreturntype.spl}
+Here we can see that the function call on line 6 will go right, since we do not use the return type here. But the call on line 10 goes wrong, because the unbounded `a' cannot be mapped to [Int]. If we enable this line, we get the following exception: 
+
+\begin{verbatim}
+Exception: [Line 10:11] Generic return type 'a' is not bound by arguments for function 'foo', so cannot be resolved.
+\end{verbatim}
+
+If we disable this line (by putting it in comments), we can pretty-print en show the symbol table of this program:
+\begin{verbatim}
+[a] foo()
+{
+        return [];
+}
+Void call_foo()
+{
+        foo();
+}
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:5          foo             ['a']                               
+0:0          isEmpty         'Bool'          ['t']               
+5:6          call_foo        'Void'                              
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:5          foo             ['a']                               
+0:0          isEmpty         'Bool'          ['t']               
+5:6          call_foo        'Void'                              
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:5          foo             ['a']                               
+0:0          isEmpty         'Bool'          ['t']               
+5:6          call_foo        'Void'                              
+==============================================================
+\end{verbatim}
 
 \newpage % vooruit dan :)
 \section{Division of work}
