@@ -1,0 +1,6 @@
+[b] foo([b] x) {
+	return x;
+}
+
+[Int] a = foo(5 : []); // gaat triviaal goed
+[Int] b = foo([]); // gaat goed, want [None] past in [Int]

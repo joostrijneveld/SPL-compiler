@@ -1,0 +1,5 @@
+[[Int]] a = [] : (5 : []) : []; //dit moet goed gaan
+// [Int] b =  [] : []; // dit moet fout gaan
+[[Int]] c =  [] : []; // dit moet goed gaan
+[[a]] d =  [] : []; // dit moet goed gaan
+[[a]] e =  (5 : []) : []; // dit moet fout gaan want a != Int
