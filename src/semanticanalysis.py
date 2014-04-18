@@ -26,8 +26,11 @@ class Type:
 		return repr(self.value)
 		
 	def __eq__(self, other):
-		if (type(self.value) is list and other.value == 'List' or
-			type(other.value) is list and self.value == 'List'):
+		if self is None or other is None: # needed to compare to 'None'
+			return self is other
+		# Type([Type(None)] represents the empty list
+		# in other words: Type(None) is the content of the empty list
+		if self.value == None or other.value == None: 
 			return True
 		
 		for t in [list, tuple]:
@@ -39,6 +42,12 @@ class Type:
 				return False
 		
 		return self.value == other.value
+	
+	def __neq__(self, other):
+		return not self == other
+	
+	def isEmptyList(self):
+		return type(self.value) is list and self.value[0].value == None
 
 def print_symboltable(symboltable):
 	print '='*62
@@ -133,7 +142,7 @@ def type_exp_base(tree, symtab):
 	elif tree.tok.type == 'bool':
 		return Type('Bool')
 	elif tree.tok.type == '[]':
-		return Type('List')
+		return Type([Type(None)])
 	elif tree.tok.type == 'FunCall':
 		t = type_expfunc(tree, symtab) # includes existence-check
 		gentab = check_funcall(tree, symtab)
@@ -166,12 +175,14 @@ type_exp_unbool = partial(type_op, type_exp_unint,
 def type_exp_con(tree, symtab):
 	if tree.tok.type == ':':
 		t1, t2 = map(partial(type_exp, symtab=symtab), tree.children)
-		if t2 not in [Type([t1]), Type('List')]:
+		if not t2.isEmptyList() and not t2 == Type([t1]):
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
 							"  Types expected: t, [t]\n"
 							"  Types found: {}, {}"
 							.format(tree.tok.line, tree.tok.col,
 								tree.tok.type, t1, t2))
+		if t1.isEmptyList() and not t2.isEmptyList(): # adding an empty list (i.e. [] : (5 : []) : [])
+			return t2
 		return Type([t1])
 	return type_exp_unbool(tree, symtab)
 
@@ -213,7 +224,7 @@ def unify(t1, t2):
 			return None
 		return Type([result])
 	if t1 == t2:
-		if t1.value == 'List':
+		if t1.value == None:
 			return t2
 		return t1
 	return None
@@ -247,8 +258,6 @@ def apply_generics(gen_type, lit_type, gentab):
 		else:
 			gentab[gen_type.value] = lit_type
 		return True
-	if lit_type.value == 'List': # we have checked that it's not a generic
-		return type(gen_type.value) is list
 	for t in [list, tuple]:
 		if type(gen_type.value) is t:
 			if type(lit_type.value) is t:
