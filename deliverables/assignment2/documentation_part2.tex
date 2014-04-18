@@ -171,9 +171,9 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Unbounded return types}
-With this example, we want to show what happens when you try to apply an unbounded return type to a concrete type. The code can be found in {\tt unboundreturntype.spl}. 
+With this example, we want to show what happens when you try to apply an unbound return type to a concrete type. The code can be found in {\tt unboundreturntype.spl}. 
 \lstinputlisting{spl/unboundreturntype.spl}
-Here we can see that the function call on line 6 will go right, since we do not use the return type here. But the call on line 10 goes wrong, because the unbounded `a' cannot be mapped to [Int]. If we enable this line, we get the following exception: 
+Here we can see that the function call on line 6 will go right, since we do not use the return type here. But the call on line 10 goes wrong, because the unbound `a' cannot be mapped to [Int]. If we enable this line, we get the following exception: 
 
 \begin{verbatim}
 Exception: [Line 10:11] Generic return type 'a' is not bound by arguments for function 'foo', so cannot be resolved.
@@ -213,6 +213,201 @@ Position     Name            Type            Argtypes
 1:5          foo             ['a']                               
 0:0          isEmpty         'Bool'          ['t']               
 5:6          call_foo        'Void'                              
+==============================================================
+\end{verbatim}
+
+\subsection{Unequal comparison}
+When we want to sort two lists and compare them, they should be of the same type. The program in the file {\tt unequalcomparisongenerics.spl} shows this. 
+\lstinputlisting{spl/unequalcomparisongenerics.spl}
+The call at line 8 will go wrong, since a returned list of integers cannot be compared with a returned lists of booleans. We will get the following error: 
+\begin{verbatim}
+Exception: [Line 8:18] Incompatible types for operator = 
+  Types expected: 't', 't'
+    Types found: ['Int'], ['Bool']
+\end{verbatim}
+
+With the empty list at line 9, everything will go right, and we get the following pretty-printed program and symbol table: 
+
+\begin{verbatim}
+[a] sort([a] list)
+{
+        return list;
+}
+Bool main()
+{
+        [Int] as = (1 : (2 : (3 : [])));
+        [Bool] bs = (True : []);
+        return (sort(as) == sort([]));
+}
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:5          sort            ['a']           ['a']               
+5:6          main            'Bool'                              
+0:0          isEmpty         'Bool'          ['t']               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:5          sort            ['a']           ['a']               
+1:14         list            ['a']           None                
+5:6          main            'Bool'                              
+0:0          isEmpty         'Bool'          ['t']               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+1:5          sort            ['a']           ['a']               
+6:8          as              ['Int']         None                
+0:0          isEmpty         'Bool'          ['t']               
+7:9          bs              ['Bool']        None                
+0:0          print           'Void'          't'                 
+5:6          main            'Bool'                              
+==============================================================
+\end{verbatim}
+
+\subsection{Type of operators}
+Another interesting example is the use of different operators. We will show this with a program that calculates the product of the values in a list. This program can be found in {\tt product.spl}.
+\lstinputlisting{spl/product.spl}
+This is a rather basic program, since no generic types are used. However, we can use it to show that the *-operator expects two integers as arguments: if we replace the [Int] in the function header with [a], we get an error: 
+\begin{verbatim}
+Exception: [Line 5:17] Incompatible types for operator *
+  Types expected: 'Int', 'Int'
+  Types found: 'a', 'Int'
+\end{verbatim}
+With just [Int] in the header, we get the following pretty-printed program and symbol table:
+\begin{verbatim}
+Int product([Int] list)
+{
+        if (isEmpty(list))
+        {
+                return 1;
+        }
+        return (list.hd * product(list.tl));
+}
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:5          product         'Int'           ['Int']             
+0:0          isEmpty         'Bool'          ['t']               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:21         list            ['Int']         None                
+1:5          product         'Int'           ['Int']             
+0:0          isEmpty         'Bool'          ['t']               
+==============================================================
+\end{verbatim}
+
+\subsection{Zip and tuples}
+With the zip function, we can show that we are able to handle both lists and tuples with generic types. The code of this program can be found in {\tt zip.spl}. 
+\lstinputlisting{spl/zip.spl}
+
+When we run this program, we get the following pretty-printed code and symbol table.
+\begin{verbatim}
+[(a,b)] zip([a] a, [b] b)
+{
+        if ((isEmpty(a) || isEmpty(b)))
+        {
+                return [];
+        }
+        return ((a.hd, b.hd) : zip(a.tl, b.tl));
+}
+Int main()
+{
+        [Int] ints = (1 : (2 : (3 : (4 : []))));
+        [Bool] bools = (True : (False : (False : (True : []))));
+        [(Int,Bool)] zipped = zip(ints, bools);
+        return 1;
+}
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+9:5          main            'Int'                               
+0:0          isEmpty         'Bool'          ['t']               
+1:9          zip             [('a', 'b')]    ['a'], ['b']        
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+1:18         a               ['a']           None                
+1:24         b               ['b']           None                
+0:0          isEmpty         'Bool'          ['t']               
+1:9          zip             [('a', 'b')]    ['a'], ['b']        
+0:0          print           'Void'          't'                 
+9:5          main            'Int'                               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          isEmpty         'Bool'          ['t']               
+11:11        ints            ['Int']         None                
+1:9          zip             [('a', 'b')]    ['a'], ['b']        
+0:0          print           'Void'          't'                 
+13:18        zipped          [('Int', 'Bool')] None                
+9:5          main            'Int'                               
+12:12        bools           ['Bool']        None                
+==============================================================
+\end{verbatim}
+
+\subsection{Pretty printer test}
+With this example, we want to show that our parser is working, and that the pretty printer will print our code in a correct way without unneeded braces. This code can be found in {\tt prettyprinttest.spl}.
+\lstinputlisting{spl/prettyprinttest.spl}
+When we omit one brace at the end, our parser will complain:
+\begin{verbatim}
+Exception: [Line 2:40] Expected ')' or ',', but got: ;
+\end{verbatim}
+
+When we compile this program, we get the following symbol table and pretty-printed code (which is much better readable):
+\begin{verbatim}
+Int calc(Int x, Int y, Int z)
+{
+        if ((((y + 1) > 0) && ((x / (y + 1)) > z)))
+        {
+                return ((5 * (((2 + x) - 6) + z)) + (42 % 3));
+        }
+        return 0;
+}
+Int main()
+{
+        return calc(1, 2, 3);
+}
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+4:5          main            'Int'                               
+1:5          calc            'Int'           'Int', 'Int', 'Int' 
+0:0          isEmpty         'Bool'          ['t']               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+1:21         y               'Int'           None                
+4:5          main            'Int'                               
+0:0          isEmpty         'Bool'          ['t']               
+1:28         z               'Int'           None                
+0:0          print           'Void'          't'                 
+1:14         x               'Int'           None                
+1:5          calc            'Int'           'Int', 'Int', 'Int' 
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:5          calc            'Int'           'Int', 'Int', 'Int' 
+4:5          main            'Int'                               
+0:0          isEmpty         'Bool'          ['t']               
 ==============================================================
 \end{verbatim}
 
