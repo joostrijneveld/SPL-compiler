@@ -44,7 +44,7 @@ class Type:
 		return self.value == other.value
 	
 	def unify(self, other):
-		''' attempts to unify self and other (necessary for empty lists) '''
+		''' attempts to unify non-generic types (necessary for empty lists) '''
 		if type(self.value) is tuple and type(other.value) is tuple:
 			left = self.value[0].unify(other.value[0])
 			right = self.value[1].unify(other.value[1])
@@ -200,7 +200,8 @@ def type_exp_con(tree, symtab):
 							"  Types found: {}, {}"
 							.format(tree.tok.line, tree.tok.col,
 								tree.tok.type, t1, t2))
-		if t1.isEmptyList() and not t2.isEmptyList(): # adding an empty list (i.e. [] : (5 : []) : [])
+		# if adding an empty list (i.e. [] : (5 : []) : [])
+		if t1.isEmptyList() and not t2.isEmptyList():
 			return t2
 		return Type([t1])
 	return type_exp_unbool(tree, symtab)
@@ -235,8 +236,8 @@ def apply_gentab(tree, t, gentab):
 		return t
 	if type(t.value) is str:
 		if t.value not in gentab:
-			raise Exception("[Line {}:{}] Generic return type {} is not bound "
-							"by arguments for function '{}', so cannot be resolved."
+			raise Exception("[Line {}:{}] Generic return type {} not bound by "
+							"arguments of function '{}', so cannot be resolved."
 							.format(tree.tok.line, tree.tok.col, t,
 								tree.children[0].tok.val))
 		return gentab[t.value]
@@ -247,6 +248,7 @@ def apply_gentab(tree, t, gentab):
 		return Type([apply_gentab(tree, t.value[0], gentab)])
 
 def apply_generics(gen_type, lit_type, gentab):
+	''' checks if gen_type can be applied to lit_type, updates gentab '''
 	if gen_type.value in ['Int', 'Bool']:
 		return gen_type == lit_type
 	if type(gen_type.value) is str:
@@ -261,9 +263,10 @@ def apply_generics(gen_type, lit_type, gentab):
 	for t in [list, tuple]:
 		if type(gen_type.value) is t:
 			if type(lit_type.value) is t:
-				return all(apply_generics(s, o, gentab) for s, o in zip(gen_type.value, lit_type.value))
+				return all(apply_generics(s, o, gentab)
+					for s, o in zip(gen_type.value, lit_type.value))
 			return False
-		if type(lit_type.value) is t: # gen_type is not list/tuple at this point
+		if type(lit_type.value) is t: # gen_type is not list/tuple here
 			return False
 
 def check_funcall(tree, symtab):
@@ -341,8 +344,9 @@ def check_vardecl(tree, symtab):
 		raise Exception("[Line {}:{}] Invalid assignment for id {}\n"
 						"  Expected expression of type: {}\n"
 						"  But got value of type: {}"
-						.format(tree.children[1].tok.line, tree.children[1].tok.col,
-							tree.children[1].tok.val, vartype, exptype))
+						.format(tree.children[1].tok.line,
+							tree.children[1].tok.col, tree.children[1].tok.val,
+							vartype, exptype))
 		
 def check_vardecls(tree, symboltable):
 	if tree:
@@ -357,7 +361,8 @@ def check_functionbinding(tree, globalsymboltable):
 		sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"
 						"[Line {}:{}] Previous definition was here\n"
 						.format(dupsym.line, dupsym.col, key,
-							globalsymboltable[key].line, globalsymboltable[key].col))
+							globalsymboltable[key].line,
+							globalsymboltable[key].col))
 	symboltable = globalsymboltable.copy()
 	symboltable.update(functionsymboltable)
 	print_symboltable(symboltable)
