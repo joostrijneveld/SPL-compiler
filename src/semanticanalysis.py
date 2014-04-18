@@ -43,6 +43,25 @@ class Type:
 		
 		return self.value == other.value
 	
+	def unify(self, other):
+		''' attempts to unify self and other (necessary for empty lists) '''
+		if type(self.value) is tuple and type(other.value) is tuple:
+			left = unify(self.value[0], other.value[0])
+			right = unify(self.value[1], other.value[1])
+			if not (left and right):
+				return None
+			return Type((left, right))
+		if type(self.value) is list and type(other.value) is list:
+			result = unify(self.value[0], other.value[0])
+			if not result:
+				return None
+			return Type([result])
+		if self == other:
+			if self.value == None:
+				return other
+			return self
+		return None
+	
 	def __neq__(self, other):
 		return not self == other
 	
@@ -210,25 +229,6 @@ def type_expargs(tree, symtab):
 def type_expfunc(tree, symtab):
 	return type_id(tree.children[0], symtab)
 
-def unify(t1, t2):
-	''' attempts to unify t1 and t2 (necessary for empty lists) '''
-	if type(t1.value) is tuple and type(t2.value) is tuple:
-		left = unify(t1.value[0], t2.value[0])
-		right = unify(t1.value[1], t2.value[1])
-		if not (left and right):
-			return None
-		return Type((left, right))
-	if type(t1.value) is list and type(t2.value) is list:
-		result = unify(t1.value[0], t2.value[0])
-		if not result:
-			return None
-		return Type([result])
-	if t1 == t2:
-		if t1.value == None:
-			return t2
-		return t1
-	return None
-
 def apply_gentab(tree, t, gentab):
 	'''replaces generics that occur in t with their literal type from gentab'''
 	if t.value in ['Int', 'Bool']:
@@ -251,7 +251,7 @@ def apply_generics(gen_type, lit_type, gentab):
 		return gen_type == lit_type
 	if type(gen_type.value) is str:
 		if gen_type.value in gentab:
-			result = unify(gentab[gen_type.value], lit_type)
+			result = gentab[gen_type.value].unify(lit_type)
 			if not result:
 				return False
 			gentab[gen_type.value] = result
