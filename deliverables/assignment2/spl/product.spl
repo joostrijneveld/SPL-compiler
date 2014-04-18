@@ -1,0 +1,6 @@
+Int product ( [a] list ) {
+	if ( isEmpty(list)) {
+		return 1;
+	}
+	return list.hd * product (list.tl);
+}
