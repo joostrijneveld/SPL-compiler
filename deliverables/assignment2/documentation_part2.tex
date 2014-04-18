@@ -4,11 +4,17 @@
 \usepackage[parfill]{parskip} % no indents on new par, but new lines
 \usepackage[colorlinks=true, linkcolor=black, urlcolor=black, citecolor=black]{hyperref} % to make labels clickable
 \usepackage{listings} % for grammar rules
+\usepackage{bussproofs} % for typing rules
+\usepackage{amssymb}
+
+\EnableBpAbbreviations
 
 % set lstset for SPL
 \lstset{language=C}
 \lstset{
- numbers=left, morekeywords={Void, Int, Bool, .fst, .snd, .hd, .tl}
+ numbers=left,
+ morekeywords={Void, Int, Bool, .fst, .snd, .hd, .tl}
+ basicstyle=\small\normalfont\sffamily,    % the size of the fonts that are used for the code
  }
 
 \title{Compiler Construction part 2: Semantic analysis}
@@ -47,6 +53,50 @@ Our submission contains the following files:
 \newpage % vooruit dan :)
 \section{Typing rules}
 % Joost: zet ff je fijne package hier neer
+
+{\sf
+\begin{prooftree}
+  \AXC{$b \in$ {\tt \{True, False\}}}
+  \RightLabel{\sc \small (Bool)}
+  \UIC{$\Gamma \vdash b$ : {\tt Bool}}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{$i \in \mathbb{N}$}
+  \RightLabel{\sc \small (Int)}
+  \UIC{$\Gamma \vdash i$ : {\tt Int}}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{$\Gamma \vdash e_1 : \sigma_1$}
+  \AXC{$\Gamma \vdash e_2 : \sigma_2$}
+  \RightLabel{\sc \small (Tuple)}
+  \BIC{$\Gamma \vdash (e_1, e_2) : (\sigma_1, \sigma_2)$}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{$\odot : \sigma_1 \rightarrow \sigma_2 \rightarrow \tau$}
+  \AXC{$\Gamma \vdash e_1 : \sigma_1$}
+  \AXC{$\Gamma \vdash e_2 : \sigma_2$}
+  \RightLabel{\sc \small (Bin op)}
+  \TIC{$\Gamma \vdash e_1 \odot e_2 : \tau$}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{$\Gamma \vdash e_1 : \sigma$}
+  \AXC{$\Gamma \vdash e_2 : [\sigma]$}
+  \RightLabel{\sc \small (Cons)}
+  \BIC{$\Gamma \vdash (e_1, e_2) : [\sigma]$}
+\end{prooftree}
+}
 
 \newpage % vooruit dan :)
 \section{Example tests}
