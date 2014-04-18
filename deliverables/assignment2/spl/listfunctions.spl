@@ -5,6 +5,10 @@
 	return x : repeatn(x, n - 1); 
 }
 
+[a] take5([a] x) {
+	return take(x, 5);
+}
+
 [a] take([a] x, Int n) {
 	if (n <= 0 || isEmpty(x)) {
 		return [];
@@ -17,7 +21,7 @@
 		return [];
 	}
 	//return x; // Must obviously go wrong
-	return flatten(x.hd : []) : flatten(x.tl);
+	return flatten(x.hd) : flatten(x.tl);
 }
 
 Int main() {
