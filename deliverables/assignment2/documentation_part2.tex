@@ -1,0 +1,52 @@
+\documentclass[a4paper]{article}
+\usepackage[english]{babel} % for english wordwrapping
+\usepackage{a4wide} % for a4 paper and images
+\usepackage[parfill]{parskip} % no indents on new par, but new lines
+\usepackage[colorlinks=true, linkcolor=black, urlcolor=black, citecolor=black]{hyperref} % to make labels clickable
+\usepackage{listings} % for grammar rules
+
+\title{Compiler Construction part 2: Semantic analysis}
+\author{Joost Rijneveld, s4048911\\Koen van Ingen, s4058038}
+\date{}
+\begin{document}
+
+\maketitle
+
+\section{Overview}
+{\bf Usage:} {\tt python src/toolchain.py spl/assignmentprogs.spl}
+
+Our submission contains the following files:
+
+\begin{description}
+	\item[src/toolchain.py] The toolchain calls the scanner, parser, printer and type checker consecutively, passing the result from one on to the next. This is the script you need to execute to parse and print an {\tt .spl} source file.
+	\item[src/scanner.py] This file contains the scanner. The scanner expects a filename and produces a list of Tokens that can then be passed on to the parser. {\tt Token} objects contain a position (line / col) to indicate where the token was found, for future error handling.
+	\item[src/parser.py] The parser expects a list of {\tt Token} objects, as produced by the scanner. It then outputs the root of a parse tree (a {\tt Node} object). Grammar rules can be mapped one-to-one to {\tt parse\_} functions, some of which are generated based on a blueprint function that is partially applied (the {\tt tail\_recursion} function). When the parser runs into an error, it prints the expected literal (if applicable) and the line and column number.
+	\item[src/semanticanalysis.py] This is the type and function binding checker. It will check for type errors and function binding errors, when it is called with the {\tt check\_binding} function. It expects a tree that can be generated with {\tt parser.py}. A dictionary with a symbol table can be given as an optional argument. The {\tt Symbol} class is also defined in this file. We currently use this optional argument to give the function a symbol table with the two predifend functions: {\tt isEmpty} and {\tt print}. 
+	\item[src/printer.py] This script expects a parse tree as provided by the parser, and prints formatted (and aligned) SPL source code to stdout.
+%	\item[spl/assignmentprogs.spl] The example SPL programs as provided in the assignment.
+	\item[spl/*] This folder contains the 10 sample SPL programs, as required by the assignment. All of them parse, print and type check fine. Some of them have wrong statements (with type errors) in comments, which can be enabled to trigger type check errors. In section \ref{examples}, we explain these programs and their result in more details.
+	\item[grammar.txt] This file contains the modified grammar which we used for our parser.
+\end{description}
+
+\newpage % vooruit dan :)
+\section{Used grammar}
+% TODO misschien wat netter formatten? Ook language=haskell moet beter kunnen
+\lstinputlisting[language=haskell]{../../grammar.txt}
+
+\newpage % vooruit dan :)
+\section{Scoping rules}
+% Ja geen idee, random verhaaltje hier doen? Of formele dingen?
+
+
+\newpage % vooruit dan :)
+\section{Typing rules}
+% Joost: zet ff je fijne package hier neer
+
+\newpage % vooruit dan :)
+\section{Example tests}
+\label{examples}
+
+\newpage % vooruit dan :)
+\section{Division of work}
+
+\end{document}
