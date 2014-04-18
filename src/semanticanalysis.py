@@ -353,6 +353,8 @@ def check_localbinding(tree, globalsymboltable):
 		return
 	if tree.children[0].tok == 'FunDecl':
 		check_functionbinding(tree.children[0], globalsymboltable)
+	elif tree.children[0].tok == 'VarDecl':
+		check_vardecl(tree.children[0], globalsymboltable)
 	check_localbinding(tree.children[1], globalsymboltable)
 
 def check_binding(tree, globalsymboltable=dict()):
