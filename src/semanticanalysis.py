@@ -46,13 +46,13 @@ class Type:
 	def unify(self, other):
 		''' attempts to unify self and other (necessary for empty lists) '''
 		if type(self.value) is tuple and type(other.value) is tuple:
-			left = unify(self.value[0], other.value[0])
-			right = unify(self.value[1], other.value[1])
+			left = self.value[0].unify(other.value[0])
+			right = self.value[1].unify(other.value[1])
 			if not (left and right):
 				return None
 			return Type((left, right))
 		if type(self.value) is list and type(other.value) is list:
-			result = unify(self.value[0], other.value[0])
+			result = self.value[0].unify(other.value[0])
 			if not result:
 				return None
 			return Type([result])
