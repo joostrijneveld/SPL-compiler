@@ -1,4 +1,4 @@
-Int product ( [a] list ) {
+Int product ( [Int] list ) {
 	if (isEmpty(list)) {
 		return 1;
 	}

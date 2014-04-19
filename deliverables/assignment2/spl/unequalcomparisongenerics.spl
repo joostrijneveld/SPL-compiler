@@ -5,6 +5,6 @@
 Bool main() {
 	[Int] as = 1:2:3:[];
 	[Bool] bs = True:[];
-	//return sort(as) == sort(bs); //  This should go wrong since Int != Bool
+	//return sort(as) == sort(bs); // Wrong: since Int != Bool
 	return sort(as) == sort([]);
 }

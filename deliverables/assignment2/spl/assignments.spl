@@ -16,7 +16,7 @@ a identity(a x) {
 
 Void main() {
 	Bool y = identity(True);
-	a x = 0; //this should break: 'a' != 'Int'
-	inc(x);
+	//a x = 0; //This should break: 'a' != 'Int'
+	//inc(x);
 	return;
 }

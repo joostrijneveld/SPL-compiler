@@ -5,6 +5,7 @@
 \usepackage[colorlinks=true, linkcolor=black, urlcolor=black, citecolor=black]{hyperref} % to make labels clickable
 \usepackage{listings} % for grammar rules
 \usepackage{bussproofs} % for typing rules
+\usepackage[T1]{fontenc} % to prevent some unavailable font shape errors
 \usepackage{amssymb}
 
 \EnableBpAbbreviations
@@ -105,7 +106,7 @@ Our submission contains the following files:
 \subsection{General function application}
 The file {\tt fnapplication.spl} is an example of a program that tests the function application and whether the number and type of arguments of the function call matches with the ones in the header.
 \lstinputlisting{spl/fnapplication.spl}
-The call at line 7 is here the only correct function call in this program: only in this case do the number and type of arguments match. In the other cases, we get an error: 
+The call at line 7 is the only correct function call in this program: only in this case do the number and type of arguments match. In the other cases, we get an error: 
 
 % Verbatim doen hier?
 \begin{verbatim}
@@ -154,7 +155,7 @@ Position     Name            Type            Argtypes
 6:6          call_foo        'Void'                              
 ==============================================================
 \end{verbatim}
-In this output refers the first table to the global symbol table, the second to the function {\tt foo()} (which off course also includes all the global symbols). The third table refers to the function {\tt call\_foo()}
+In this output refers the first table to the global symbol table, the second to the function {\tt foo()} (which off course also includes all the global symbols). The third table refers to the function {\tt call\_foo()}.
 
 \subsection{Assignments with empty lists}
 Because empty lists can cause a lot of troubles with type checking (since can match on most generic types, but not all of them), we thought it might be a good idea to include some test variable declarations with empty lists as an example program. This can be found in {\tt emptylists.spl}. 
@@ -165,7 +166,7 @@ Exception: [Line 2:7] Invalid assignment for id b
   Expected expression of type: ['Int']
     But got value of type: [[None]]
 \end{verbatim}
-The examples on line 4 and 5 should go right, since in both cases, the empty list can be mapped to either a list of list of Int or a generic list of list of `a'. Example 5 will fail because ???
+The examples on line 4 and 5 should go right, since in both cases, the empty list can be mapped to either a list of list of Int or a generic list of list of `a'. Example 5 will fail because the integer 5 cannot be mapped to the generic type `a'. Example 5 is actually the same example as the one we show in section \ref{var-assign}. The example on line 8 combines the other examples with tuples. This should go right if all the other cases are type checked correctly. Luckily, this example is typed correctly with our type checker!
 
 This is the pretty-printed output and the symbtol table of this program: 
 \begin{verbatim}
@@ -188,9 +189,9 @@ Position     Name            Type            Argtypes
 \subsection{Function application with empty lists}
 In our next example, we will combine our function application with the empty lists. The code can be found in {\tt fnonemptylists.spl}.
 \lstinputlisting{spl/fnonemptylists.spl}
-The call on line 5 will go right, because we give this function a list of integers, which is possible because this can be mapped to the more generic type `b'. As a result, we get a lists of integers back, which fits exactly in our variable `a' that is of type [Int]. For the call on line 6, the same holds, since the empty list fits in a list of integers. 
+The call on line 5 works, because we give this function a list of integers, which is possible because this can be mapped to the more generic type `b'. As a result, we get back a list of integers, which fits exactly in our variable `a' that is of type [Int]. For the call on line 6, the same holds, since the empty list fits in a list of integers. 
 
-This is the pretty-printed output and the symbol table of this program: 
+This is the pretty-printed output and symbol table of this program: 
 \begin{verbatim}
 [b] foo([b] x)
 {
@@ -220,16 +221,109 @@ Position     Name            Type            Argtypes
 ==============================================================
 \end{verbatim}
 
-\subsection{Unbounded return types}
-With this example, we want to show what happens when you try to apply an unbound return type to a concrete type. The code can be found in {\tt unboundreturntype.spl}. 
+\subsection{Variable assignments}
+\label{var-assign}
+It is not allowed to assign an integer to a generic type, since these types do not match. Our next example demonstrates this. The code can be found in {\tt assignments.spl}. 
+\lstinputlisting{spl/assignments.spl}
+The assignment at line 19 should go wrong, since type `a' is not equal to type `int'. And indeed, we get an error when we uncomment that line: 
+\begin{verbatim}
+Exception: [Line 19:4] Invalid assignment for id x
+  Expected expression of type: 'a'
+  But got value of type: 'Int'
+\end{verbatim}
+
+Otherwise, we get the following pretty-printed code and symbol table: 
+\begin{verbatim}
+Int inc(Int x)
+{
+        return (x + 1);
+}
+Int count_to_ten()
+{
+        Int x = 0;
+        while ((x <= 10))
+        {
+                x = inc(x);
+        }
+        return x;
+}
+a identity(a x)
+{
+        return x;
+}
+Void main()
+{
+        Bool y = identity(True);
+        return;
+}
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          isEmpty         'Bool'          ['t']               
+5:5          count_to_ten    'Int'                               
+0:0          print           'Void'          't'                 
+17:6         main            'Void'                              
+13:3         identity        'a'             'a'                 
+1:5          inc             'Int'           'Int'               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          isEmpty         'Bool'          ['t']               
+5:5          count_to_ten    'Int'                               
+0:0          print           'Void'          't'                 
+1:13         x               'Int'           None                
+17:6         main            'Void'                              
+13:3         identity        'a'             'a'                 
+1:5          inc             'Int'           'Int'               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          isEmpty         'Bool'          ['t']               
+5:5          count_to_ten    'Int'                               
+0:0          print           'Void'          't'                 
+6:6          x               'Int'           None                
+17:6         main            'Void'                              
+13:3         identity        'a'             'a'                 
+1:5          inc             'Int'           'Int'               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          isEmpty         'Bool'          ['t']               
+5:5          count_to_ten    'Int'                               
+0:0          print           'Void'          't'                 
+13:14        x               'a'             None                
+17:6         main            'Void'                              
+13:3         identity        'a'             'a'                 
+1:5          inc             'Int'           'Int'               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+18:7         y               'Bool'          None                
+0:0          isEmpty         'Bool'          ['t']               
+5:5          count_to_ten    'Int'                               
+0:0          print           'Void'          't'                 
+17:6         main            'Void'                              
+13:3         identity        'a'             'a'                 
+1:5          inc             'Int'           'Int'               
+==============================================================
+\end{verbatim}
+
+
+\subsection{Unbound return types}
+With this example, we want to demonstrate what happens when you try to apply a unbound return type to a concrete type. The code can be found in {\tt unboundreturntype.spl}. 
 \lstinputlisting{spl/unboundreturntype.spl}
-Here we can see that the function call on line 6 will go right, since we do not use the return type here. But the call on line 10 goes wrong, because the unbound `a' cannot be mapped to [Int]. If we enable this line, we get the following exception: 
+Here we can see that the function call on line 6 will go right, since we do not use the return type here. But the call on line 10 does not work, because the unbound `a' cannot be mapped to [Int]. If we enable this line, we get the following exception: 
 
 \begin{verbatim}
 Exception: [Line 10:11] Generic return type 'a' is not bound by arguments for function 'foo', so cannot be resolved.
 \end{verbatim}
 
-If we disable this line (by putting it in comments), we can pretty-print en show the symbol table of this program:
+If we disable this line (by putting it in comments), we can pretty-print and show the symbol table of this program:
 \begin{verbatim}
 [a] foo()
 {
@@ -267,9 +361,9 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Unequal comparison}
-When we want to sort two lists and compare them, they should be of the same type. The program in the file {\tt unequalcomparisongenerics.spl} shows this. 
+When we want to sort two lists and compare them, they should be of the same type. The program in the file {\tt unequalcomparisongenerics.spl} gives an example of this problem.
 \lstinputlisting{spl/unequalcomparisongenerics.spl}
-The call at line 8 will go wrong, since a returned list of integers cannot be compared with a returned lists of booleans. We will get the following error: 
+The call at line 8 will produce an error, since a returned list of integers cannot be compared with a returned list of booleans. We will get the following error: 
 \begin{verbatim}
 Exception: [Line 8:18] Incompatible types for operator = 
   Types expected: 't', 't'
@@ -320,15 +414,21 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Type of operators}
-Another interesting example is the use of different operators. We will show this with a program that calculates the product of the values in a list. This program can be found in {\tt product.spl}.
-\lstinputlisting{spl/product.spl}
-This is a rather basic program, since no generic types are used. However, we can use it to show that the *-operator expects two integers as arguments: if we replace the [Int] in the function header with [a], we get an error: 
+Another interesting example is the use of different operators. We will show this with a program that calculates the product of the values in a list. This program can be found in {\tt operators.spl}.
+\lstinputlisting{spl/operators.spl}
+This is a rather basic program, since no generic types are used at all. However, we can use it to show that the *-operator expects two integers as arguments: if we replace the [Int] in the function header with [a], we get an error: 
 \begin{verbatim}
 Exception: [Line 5:17] Incompatible types for operator *
   Types expected: 'Int', 'Int'
   Types found: 'a', 'Int'
 \end{verbatim}
-With just [Int] in the header, we get the following pretty-printed program and symbol table:
+The same holds for the \emph{all} and \emph{any} function: when we replace the boolean type with a generic type, we get the same exception: 
+\begin{verbatim}
+Exception: [Line 12:17] Incompatible types for operator &&
+  Types expected: 'Bool', 'Bool'
+  Types found: 'a', 'Bool'
+\end{verbatim}
+With the right types in the header, we get the following pretty-printed program and symbol table:
 \begin{verbatim}
 Int product([Int] list)
 {
@@ -338,6 +438,22 @@ Int product([Int] list)
         }
         return (list.hd * product(list.tl));
 }
+Bool all([Bool] list)
+{
+        if (isEmpty(list))
+        {
+                return True;
+        }
+        return (list.hd && all(list.tl));
+}
+Bool any([Bool] list)
+{
+        if (isEmpty(list))
+        {
+                return True;
+        }
+        return (list.hd || any(list.tl));
+}
 
 ==============================================================
 Position     Name            Type            Argtypes            
@@ -345,19 +461,43 @@ Position     Name            Type            Argtypes
 0:0          print           'Void'          't'                 
 1:5          product         'Int'           ['Int']             
 0:0          isEmpty         'Bool'          ['t']               
+8:6          all             'Bool'          ['Bool']            
+15:6         any             'Bool'          ['Bool']            
 ==============================================================
 ==============================================================
 Position     Name            Type            Argtypes            
 --------------------------------------------------------------
-0:0          print           'Void'          't'                 
-1:21         list            ['Int']         None                
 1:5          product         'Int'           ['Int']             
 0:0          isEmpty         'Bool'          ['t']               
+0:0          print           'Void'          't'                 
+1:21         list            ['Int']         None                
+8:6          all             'Bool'          ['Bool']            
+15:6         any             'Bool'          ['Bool']            
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+1:5          product         'Int'           ['Int']             
+0:0          isEmpty         'Bool'          ['t']               
+0:0          print           'Void'          't'                 
+8:17         list            ['Bool']        None                
+8:6          all             'Bool'          ['Bool']            
+15:6         any             'Bool'          ['Bool']            
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+1:5          product         'Int'           ['Int']             
+0:0          isEmpty         'Bool'          ['t']               
+0:0          print           'Void'          't'                 
+15:17        list            ['Bool']        None                
+8:6          all             'Bool'          ['Bool']            
+15:6         any             'Bool'          ['Bool']            
 ==============================================================
 \end{verbatim}
 
 \subsection{Zip and tuples}
-With the zip function, we can show that we are able to handle both lists and tuples with generic types. The code of this program can be found in {\tt zip.spl}. 
+With an example of the zip function, it follows that we are able to handle both lists and tuples with generic types. The code of this program can be found in {\tt zip.spl}. 
 \lstinputlisting{spl/zip.spl}
 
 When we run this program, we get the following pretty-printed code and symbol table.
@@ -410,7 +550,7 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Pretty printer test}
-With this example, we want to show that our parser is working, and that the pretty printer will print our code in a correct way without unneeded braces. This code can be found in {\tt prettyprinttest.spl}.
+The next example is more aimed at the parser and pretty printer than the type checker: we want to demonstratie that our parser is working, and that the pretty printer will print our code in a correct way without unneeded braces. This code can be found in {\tt prettyprinttest.spl}.
 \lstinputlisting{spl/prettyprinttest.spl}
 When we omit one brace at the end, our parser will complain:
 \begin{verbatim}
@@ -460,6 +600,71 @@ Position     Name            Type            Argtypes
 0:0          isEmpty         'Bool'          ['t']               
 ==============================================================
 \end{verbatim}
+
+\subsection{Shadowing}
+Functions and variables cannot have the same id, since this would create ambiguity, this can be demonstrated with the program found in {\tt shadowing.spl}.
+\lstinputlisting{spl/shadowing.spl}
+The statement on line 13 will thus give an exception, since \emph{sum} is a var here: 
+\begin{verbatim}
+Exception: [Line 13:12] 'sum' is a variable, not a function.
+\end{verbatim}
+
+When we uncomment the statements at line 11 and 12, we will get an warning about a redefinition:
+\begin{verbatim}
+[Line 11:7] Warning: redefinition of global x
+[Line 1:5] Previous definition was here
+[Line 12:6] Warning: redefinition of global sum
+[Line 3:5] Previous definition was here
+\end{verbatim}
+
+But this is not an error: this program will still typecheck and pretty-print fine: 
+\begin{verbatim}
+Int x = 42;
+Int sum([Int] xs)
+{
+        if (isEmpty(xs))
+        {
+                return 0;
+        }
+        return (xs.hd + sum(xs.tl));
+}
+Void main()
+{
+        Bool x = True;
+        Int sum = 5;
+        return;
+}
+
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+1:5          x               'Int'           None                
+3:5          sum             'Int'           ['Int']             
+10:6         main            'Void'                              
+0:0          isEmpty         'Bool'          ['t']               
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          isEmpty         'Bool'          ['t']               
+3:15         xs              ['Int']         None                
+0:0          print           'Void'          't'                 
+1:5          x               'Int'           None                
+3:5          sum             'Int'           ['Int']             
+10:6         main            'Void'                              
+==============================================================
+==============================================================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          isEmpty         'Bool'          ['t']               
+0:0          print           'Void'          't'                 
+11:7         x               'Bool'          None                
+12:6         sum             'Int'           None                
+10:6         main            'Void'                              
+==============================================================
+\end{verbatim}
+
 
 \newpage % vooruit dan :)
 \section{Division of work}
