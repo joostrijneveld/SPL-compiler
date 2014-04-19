@@ -7,6 +7,7 @@
 \usepackage{bussproofs} % for typing rules
 \usepackage[T1]{fontenc} % to prevent some unavailable font shape errors
 \usepackage{amssymb}
+\usepackage[ttscale=.875, ]{libertine}
 
 \EnableBpAbbreviations
 
@@ -15,8 +16,19 @@
 \lstset{
  numbers=left,
  morekeywords={Void, Int, Bool, .fst, .snd, .hd, .tl}
- basicstyle=\small\normalfont\sffamily,    % the size of the fonts that are used for the code
- }
+  frame=top,frame=bottom,
+   basicstyle=\small\normalfont\sffamily,    % the size of the fonts that are used for the code
+   stepnumber=1,                           % the step between two line-numbers. If it is 1 each line will be numbered
+   numbersep=10pt,                         % how far the line-numbers are from the code
+   tabsize=4,                              % tab size in blank spaces
+   extendedchars=true,                     %
+   breaklines=true,                        % sets automatic line breaking
+   captionpos=t,                           % sets the caption-position to top
+   mathescape=true,
+   showspaces=false,           % 
+   showtabs=false,             % 
+   showstringspaces=false      % 
+  }
 
 \title{Compiler Construction part 2: Semantic analysis}
 \author{Joost Rijneveld, s4048911\\Koen van Ingen, s4058038}

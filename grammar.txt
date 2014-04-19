@@ -40,9 +40,9 @@ ExpBase	= ExpField
 		| "(" Exp ")"
 		| "(" Exp "," Exp ")"
 		
-ExpField  = id (".hd" | ".tl" | ".fst" | ".snd")*
-ExpFunc	= id "(" [ ExpArgs ] ")"
-ExpArgs	= Exp [ "," ExpArgs ]
+ExpField = id (".hd" | ".tl" | ".fst" | ".snd")*
+ExpFunc	 = id "(" [ ExpArgs ] ")"
+ExpArgs	 = Exp [ "," ExpArgs ]
 
 int		= digit+
 id 		= alpha ("_" | alphaNum)*
