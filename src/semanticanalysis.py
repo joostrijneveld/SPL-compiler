@@ -163,27 +163,15 @@ def type_op(fn, in_types, out_type, ops, tree, symtab):
 							.format(tree.tok.line, tree.tok.col, tree.tok.type,
 								', '.join(map(str, in_types)),
 								', '.join(map(str, rev_types))))
-		return out_type
+		return apply_gentab(tree, out_type, gentab)
 	return fn(tree, symtab)
 
 type_exp_unint = partial(type_op, type_exp_base,
 	[Type('Int')], Type('Int'), ['-'])
 type_exp_unbool = partial(type_op, type_exp_unint,
 	[Type('Bool')], Type('Bool'), ['!'])
-
-def type_exp_con(tree, symtab):
-	if tree.tok.type == ':':
-		t1, t2 = map(partial(type_exp, symtab=symtab), tree.children)
-		result = t2.unify(Type([t1]))
-		if result == None:
-			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
-							"  Types expected: t, [t]\n"
-							"  Types found: {}, {}"
-							.format(tree.tok.line, tree.tok.col,
-								tree.tok.type, t1, t2))
-		return result
-	return type_exp_unbool(tree, symtab)
-
+type_exp_con = partial(type_op, type_exp_unbool,
+	[Type('t'), Type([Type('t')])], Type([Type('t')]), [':'])
 type_exp_mult = partial(type_op, type_exp_con,
 	[Type('Int'), Type('Int')], Type('Int'), ['*', '/', '%'])
 type_exp_add = partial(type_op, type_exp_mult,
