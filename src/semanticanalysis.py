@@ -35,7 +35,7 @@ class Type:
 			return Type((left, right))
 		if type(self.value) is list and type(other.value) is list:
 			result = self.value[0].unify(other.value[0])
-			if not result:
+			if result is None:
 				return None
 			return Type([result])
 		if type(self.value) is str and type(other.value) is str:
@@ -226,14 +226,12 @@ def apply_generics(gen_type, lit_type, gentab):
 		else:
 			gentab[gen_type.value] = lit_type
 		return True
-	for t in [list, tuple]:
-		if type(gen_type.value) is t:
-			if type(lit_type.value) is t:
-				return all(apply_generics(s, o, gentab)
-					for s, o in zip(gen_type.value, lit_type.value))
-			return False
-		if type(lit_type.value) is t: # gen_type is not list/tuple here
-			return False
+	if type(gen_type.value) is tuple and type(lit_type.value) is tuple:
+		return (apply_generics(gen_type.value[0], lit_type.value[0], gentab)
+			and apply_generics(gen_type.value[1], lit_type.value[1], gentab))
+	if type(gen_type.value) is list and type(lit_type.value) is list:
+		return apply_generics(gen_type.value[0], lit_type.value[0], gentab)
+	return False
 
 def check_funcall(tree, symtab):
 	expected = symtab[tree.children[0].tok.val].argtypes
