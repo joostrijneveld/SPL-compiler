@@ -8,7 +8,7 @@
 \usepackage[T1]{fontenc} % to prevent some unavailable font shape errors
 \usepackage{amssymb}
 \usepackage[ttscale=.875, ]{libertine}
-%\usepackage{libertine} % For Ubuntu
+%\usepackage{libertine} % for Ubuntu
 
 \EnableBpAbbreviations
 
@@ -44,14 +44,14 @@
 Our submission contains the following files:
 
 \begin{description}
-	\item[src/toolchain.py] The toolchain calls the scanner, parser, printer and type checker consecutively, passing the result from one on to the next. This is the script you need to execute to parse and print an {\tt .spl} source file.
+	\item[src/toolchain.py] The toolchain calls the scanner, parser, printer and type checker consecutively, passing the result from one on to the next. This is the script you need to execute to parse, print and type check an {\tt .spl} source file.
 	\item[src/scanner.py] This file contains the scanner. The scanner expects a filename and produces a list of Tokens that can then be passed on to the parser. {\tt Token} objects contain a position (line / col) to indicate where the token was found, for future error handling.
 	\item[src/parser.py] The parser expects a list of {\tt Token} objects, as produced by the scanner. It then outputs the root of a parse tree (a {\tt Node} object). Grammar rules can be mapped one-to-one to {\tt parse\_} functions, some of which are generated based on a blueprint function that is partially applied (the {\tt tail\_recursion} function). When the parser runs into an error, it prints the expected literal (if applicable) and the line and column number.
-	\item[src/semanticanalysis.py] This is the type and function binding checker. It will check for type errors and function binding errors, when it is called with the {\tt check\_binding} function. It expects a tree that can be generated with {\tt parser.py}. A dictionary with a symbol table can be given as an optional argument. The {\tt Symbol} class is also defined in this file. We currently use this optional argument to give the function a symbol table with the two predifend functions: {\tt isEmpty} and {\tt print}. 
+	\item[src/semanticanalysis.py] This is the type and function binding checker. It will check for type errors and function binding errors, when it is called with the {\tt check\_binding} function. It expects a tree that can be generated with {\tt parser.py}. A dictionary with a symbol table can be given as an optional argument. The {\tt Symbol} class is also defined in this file. We currently use this optional argument to give the function a symbol table with the two predefined functions: {\tt isEmpty} and {\tt print}. 
 	\item[src/printer.py] This script expects a parse tree as provided by the parser, and prints formatted (and aligned) SPL source code to stdout.
 %	\item[spl/assignmentprogs.spl] The example SPL programs as provided in the assignment.
 	\item[spl/*] This folder contains the 10 sample SPL programs, as required by the assignment. All of them parse, print and type check fine. Some of them have wrong statements (with type errors) in comments, which can be enabled to trigger type check errors. In section \ref{examples}, we explain these programs and their result in more details.
-	\item[grammar.txt] This file contains the modified grammar which we used for our parser.
+	\item[grammar.txt] This file contains the modified grammar which we used for our compiler.
 \end{description}
 
 \newpage % vooruit dan :)
@@ -64,7 +64,7 @@ Our submission contains the following files:
 
 Note that many of these rules are directly derived from the rules as provided for {\tt SL} in the lecture slides, or are slight variations thereof.
 
-The two basic types, {\tt Int} and {\tt Bool}, are defined by the following axioms. Note that integers are from $\mathbb{N}$ rather than $\mathbb{Z}$, as negative integers are typed using the unary negation operator.
+The two basic types, {\tt Int} and {\tt Bool}, are defined by the following axioms. Note that integers are takenfrom $\mathbb{N}$ rather than $\mathbb{Z}$, as negative integers are typed using the unary negation operator.
 
 {\sf
 \begin{prooftree}
@@ -432,12 +432,12 @@ Position     Name            Type            Argtypes
 \label{var-assign}
 It is not allowed to assign an integer to a generic type, since these types do not match. Our next example demonstrates this. The code can be found in {\tt assignments.spl}. 
 \lstinputlisting{spl/assignments.spl}
-The assignment at line 18 should go wrong, because `y' is unknown here and thus cannot be assigned to `x':
+The assignment on line 18 should go wrong, because `y' is unknown here and thus cannot be assigned to `x':
 \begin{verbatim}
 Exception: [Line 18:11] Found id y, but it has not been defined
 \end{verbatim}
 
-The assignment at line 20 should also go wrong, since type `a' is not equal to type `Int'. And indeed, we get an error when we uncomment that line: 
+The assignment on line 20 should also go wrong, since type `a' is not equal to type `Int'. And indeed, we get an error when we uncomment that line: 
 \begin{verbatim}
 Exception: [Line 20:4] Invalid assignment for id x
   Expected expression of type: 'a'
@@ -570,14 +570,14 @@ Position     Name            Type            Argtypes
 \subsection{Unequal comparison}
 When we want to sort two lists and compare them, they should be of the same type. The program in the file {\tt unequalcomparisongenerics.spl} gives an example of this problem. This is the program that was briefly discussed on the Blackboard at the second seminar.
 \lstinputlisting{spl/unequalcomparisongenerics.spl}
-The call at line 8 will produce an error, since a returned list of integers cannot be compared with a returned list of booleans. We will get the following error: 
+The call on line 8 will produce an error, since a returned list of integers cannot be compared with a returned list of booleans. We will get the following error: 
 \begin{verbatim}
-Exception: [Line 8:18] Incompatible types for operator = 
+Exception: [Line 8:18] Incompatible types for operator '=='
   Types expected: 't', 't'
     Types found: ['Int'], ['Bool']
 \end{verbatim}
 
-With the empty list at line 9, everything will go right, and we get the following pretty-printed program and symbol table: 
+With the empty list on line 9, everything will go right, and we get the following pretty-printed program and symbol table: 
 
 \begin{verbatim}
 [a] sort([a] list)
@@ -625,13 +625,13 @@ Another interesting example is the use of different operators. We show this with
 This is a rather basic program, since no generic types are used at all. However, we can use it to show that the *-operator expects two integers as arguments: if we replace the [Int] in the function header with [a], we get an error: 
 
 \begin{verbatim}
-Exception: [Line 5:17] Incompatible types for operator *
+Exception: [Line 5:17] Incompatible types for operator '*'
   Types expected: 'Int', 'Int'
   Types found: 'a', 'Int'
 \end{verbatim}
 The same holds for the \emph{all} and \emph{any} function: when we replace the boolean type with a generic type, we get the same exception: 
 \begin{verbatim}
-Exception: [Line 12:17] Incompatible types for operator &&
+Exception: [Line 12:17] Incompatible types for operator '&&'
   Types expected: 'Bool', 'Bool'
   Types found: 'a', 'Bool'
 \end{verbatim}
@@ -809,7 +809,7 @@ The statement on line 13 will thus give an exception, since \emph{sum} is a var 
 Exception: [Line 13:12] 'sum' is a variable, not a function.
 \end{verbatim}
 
-When we uncomment the statements at line 11 and 12, we will get an warning about a redefinition:
+When we uncomment the statements on line 11 and 12, we will get an warning about a redefinition:
 \begin{verbatim}
 [Line 11:7] Warning: redefinition of global x
 [Line 1:5] Previous definition was here
@@ -817,7 +817,7 @@ When we uncomment the statements at line 11 and 12, we will get an warning about
 [Line 3:5] Previous definition was here
 \end{verbatim}
 
-But this is not an error: this program will still pass the type checking and pretty-print fine: 
+But this is not an error: this program will still pass the type checking test and pretty-print fine: 
 \begin{verbatim}
 Int x = 42;
 Int sum([Int] xs)
