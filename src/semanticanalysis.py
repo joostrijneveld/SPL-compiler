@@ -11,7 +11,7 @@ class Type:
 		self.value = value
 	
 	@staticmethod
-	def from_node(tree): # tree is Type-node
+	def from_node(tree): # tree is a Type-node
 		if tree.tok.type in ['Bool', 'Int', 'Void']:
 			return Type(tree.tok.type)
 		elif tree.tok.type == 'id':
@@ -30,7 +30,7 @@ class Type:
 		if type(self.value) is tuple and type(other.value) is tuple:
 			left = self.value[0].unify(other.value[0])
 			right = self.value[1].unify(other.value[1])
-			if not (left and right):
+			if left is None or right is None:
 				return None
 			return Type((left, right))
 		if type(self.value) is list and type(other.value) is list:
@@ -157,7 +157,7 @@ def type_op(fn, in_types, out_type, ops, tree, symtab):
 		rev_types = map(partial(type_exp, symtab=symtab), tree.children)
 		gentab = dict()
 		if not all(apply_generics(e, r, gentab) for e, r in zip(in_types, rev_types)):
-			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
+			raise Exception("[Line {}:{}] Incompatible types for operator '{}'\n"
 							"  Types expected: {}\n"
 							"  Types found: {}"
 							.format(tree.tok.line, tree.tok.col, tree.tok.type,
@@ -318,6 +318,11 @@ def check_stmt(tree, symtab, rettype):
 def check_stmts(tree, symboltable, rettype):
 	if tree:
 		returned = check_stmt(tree.children[0], symboltable, rettype)
+		if returned and tree.children[1] is not None:
+			raise Exception("[Line {}:{}] Unreachable code detected\n"
+							"  If this is intentional, enclose it in comments"
+							.format(tree.children[1].children[0].tok.line,
+								tree.children[1].children[0].tok.col))
 		return returned or check_stmts(tree.children[1], symboltable, rettype)
 
 def check_vardecl(tree, symtab):
