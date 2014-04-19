@@ -24,24 +24,6 @@ class Type:
 
 	def __repr__(self):
 		return repr(self.value)
-		
-	def __eq__(self, other):
-		if self is None or other is None: # needed to compare to 'None'
-			return self is other
-		# Type([Type(None)] represents the empty list
-		# in other words: Type(None) is the content of the empty list
-		if self.value == None or other.value == None: 
-			return True
-		
-		for t in [list, tuple]:
-			if type(self.value) is t:
-				if type(other.value) is t:
-					return all(s == o for s, o in zip(self.value, other.value))
-				return False
-			if type(other.value) is t: # self is not list/tuple at this point
-				return False
-		
-		return self.value == other.value
 	
 	def unify(self, other):
 		''' attempts to unify non-generic types (necessary for empty lists) '''
@@ -56,17 +38,15 @@ class Type:
 			if not result:
 				return None
 			return Type([result])
-		if self == other:
-			if self.value == None:
-				return other
+		if type(self.value) is str and type(other.value) is str:
+			if self.value == other.value:
+				return self
+			return None
+		if self.value == None:
+			return other
+		if other.value == None:
 			return self
 		return None
-	
-	def __neq__(self, other):
-		return not self == other
-	
-	def isEmptyList(self):
-		return type(self.value) is list and self.value[0].value == None
 
 def print_symboltable(symboltable):
 	print '='*62
@@ -194,16 +174,14 @@ type_exp_unbool = partial(type_op, type_exp_unint,
 def type_exp_con(tree, symtab):
 	if tree.tok.type == ':':
 		t1, t2 = map(partial(type_exp, symtab=symtab), tree.children)
-		if not t2.isEmptyList() and not t2 == Type([t1]):
+		result = t2.unify(Type([t1]))
+		if result == None:
 			raise Exception("[Line {}:{}] Incompatible types for operator {}\n"
 							"  Types expected: t, [t]\n"
 							"  Types found: {}, {}"
 							.format(tree.tok.line, tree.tok.col,
 								tree.tok.type, t1, t2))
-		# if adding an empty list (i.e. [] : (5 : []) : [])
-		if t1.isEmptyList() and not t2.isEmptyList():
-			return t2
-		return Type([t1])
+		return result
 	return type_exp_unbool(tree, symtab)
 
 type_exp_mult = partial(type_op, type_exp_con,
@@ -250,8 +228,8 @@ def apply_gentab(tree, t, gentab):
 def apply_generics(gen_type, lit_type, gentab):
 	''' checks if gen_type can be applied to lit_type, updates gentab '''
 	if gen_type.value in ['Int', 'Bool']:
-		return gen_type == lit_type
-	if type(gen_type.value) is str:
+		return gen_type.unify(lit_type) is not None
+	if type(gen_type.value) is str: 
 		if gen_type.value in gentab:
 			result = gentab[gen_type.value].unify(lit_type)
 			if not result:
@@ -306,9 +284,10 @@ def check_stmt(tree, symtab, rettype):
 		check_funcall(tree, symtab)
 	elif tree.tok.type == 'if' or tree.tok.type == 'while':
 		condition = type_exp(tree.children[0], symtab)
-		if not condition == Type('Bool'):
+		if condition.unify(Type('Bool')) is None:
 			raise Exception("[Line {}:{}] Incompatible condition type\n"
-							"  Expected expression of type Bool, but got {}"
+							"  Expected expression of type: Bool\n"
+							"  But got value of type: {}"
 							.format(tree.tok.line, tree.tok.col, condition))
 		returned = False
 		if tree.tok.type == 'if' and tree.children[2]: # for 'else'-clause
@@ -317,7 +296,7 @@ def check_stmt(tree, symtab, rettype):
 	elif tree.tok.type == '=':
 		fieldtype = type_exp_field(tree.children[0], symtab)
 		exptype = type_exp(tree.children[1], symtab)
-		if not fieldtype == exptype:
+		if fieldtype.unify(exptype) is None:
 			raise Exception("[Line {}:{}] Invalid assignment for id {}\n"
 							"  Expected expression of type: {}\n"
 							"  But got value of type: {}"
@@ -328,7 +307,7 @@ def check_stmt(tree, symtab, rettype):
 			exptype = Type('Void')
 		else:
 			exptype = type_exp(tree.children[0], symtab)
-		if not rettype == exptype:
+		if rettype.unify(exptype) is None:
 			raise Exception("[Line {}:{}] Invalid return type\n"
 							"  Function is of type: {}\n"
 							"  But returns value of type: {}"
@@ -344,7 +323,7 @@ def check_stmts(tree, symboltable, rettype):
 def check_vardecl(tree, symtab):
 	vartype = Type.from_node(tree.children[0])
 	exptype = type_exp(tree.children[2], symtab)
-	if not vartype == exptype:
+	if vartype.unify(exptype) is None:
 		raise Exception("[Line {}:{}] Invalid assignment for id {}\n"
 						"  Expected expression of type: {}\n"
 						"  But got value of type: {}"
@@ -372,7 +351,7 @@ def check_functionbinding(tree, globalsymboltable):
 	print_symboltable(symboltable)
 	check_vardecls(tree.children[3], symboltable)
 	returned = check_stmts(tree.children[4], symboltable, rettype)
-	if not returned and not rettype == Type('Void'):
+	if not returned and rettype.unify(Type('Void')) is None:
 		raise Exception("[Line {}:{}] Missing return statement "
 						"in a non-Void function"
 						.format(tree.children[1].tok.line,
