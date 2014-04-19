@@ -46,3 +46,26 @@ Int f(a x, a y) {
 	a id = 4;
 	return 1;
 }
+
+
+
+=== Scoping rules ===
+==== 'Algorithm' ====
+Global check: add global vars and functions (with their id, return type and argtypes) to symbol table
+
+Do a check for every function:
+	make a symbol table for this function (same way as for global sym)
+	check whether there are duplicates between global and local
+		if so -> give warning
+	check for return statement (obligated in non-void functions)
+		if not -> exit with error
+	check if funcalls exist in global symbol table
+
+==== 'Rules' ====
+Then we can derive the following scoping 'rules'?
+	* redefinition/shadowing is allowed, but warning
+	* order of function definitnions does not matter (solved in compiler by using a 2-pass check)
+	* return statement obligatory in non-void (is more about type checking I think?)
+	* vars need to be declared before use
+	* vars need to be in scope: either global, or defined in the function that uses them
+		if scope is not a problem: variables are always known, because they need to be declared before the statements
