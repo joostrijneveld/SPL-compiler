@@ -1,5 +1,5 @@
 [a] foo() {
-	return 5 : [];
+	return [];
 }
 
 Void call_foo() {
