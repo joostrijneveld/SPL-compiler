@@ -56,12 +56,7 @@ Our submission contains the following files:
 \newpage % vooruit dan :)
 \section{Used grammar}
 % TODO misschien wat netter formatten? Ook language=haskell moet beter kunnen
-\lstinputlisting[numbers=none, language=haskell]{../../grammar.txt}
-
-\newpage % vooruit dan :)
-\section{Scoping rules}
-% Ja geen idee, random verhaaltje hier doen? Of formele dingen?
-
+\lstinputlisting[numbers=none, deletekeywords={int}]{../../grammar.txt}
 
 \newpage % vooruit dan :)
 \section{Typing rules}
@@ -317,9 +312,9 @@ All scoping rules are explicitly enforced through fatal errors, meaning that the
 \label{examples}
 
 \subsection{General function application}
-The file {\tt fnapplication.spl} is an example of a program that tests the function application and whether the number and type of arguments of the function call matches with the ones in the header.
+The file {\tt fnapplication.spl} is an example of a program that tests the function application and whether the number and type of arguments of the function call matches with the header.
 \lstinputlisting{spl/fnapplication.spl}
-The call at line 7 is the only correct function call in this program: only in this case do the number and type of arguments match. In the other cases, we get an error: 
+The call on line 7 is the only correct function call in this program: only in this case do the number and type of arguments match. In the other cases, we get an error: 
 
 % Verbatim doen hier?
 \begin{verbatim}
@@ -368,18 +363,18 @@ Position     Name            Type            Argtypes
 6:6          call_foo        'Void'                              
 ==============================================================
 \end{verbatim}
-In this output refers the first table to the global symbol table, the second to the function {\tt foo()} (which off course also includes all the global symbols). The third table refers to the function {\tt call\_foo()}.
+In this output, the first table refers to the global symbol table and the second to the function {\tt foo()} (which also includes all the global symbols). The third table refers to the function {\tt call\_foo()}, but does not contain any arguments or variable declarations.
 
 \subsection{Assignments with empty lists}
-Because empty lists can cause a lot of troubles with type checking (since can match on most generic types, but not all of them), we thought it might be a good idea to include some test variable declarations with empty lists as an example program. This can be found in {\tt emptylists.spl}. 
+Because empty lists can cause a lot of trouble with type checking (since they can match on any list types), we thought it might be a good idea to include some test variable declarations with empty lists as an example program. This can be found in {\tt emptylists.spl}. 
 \lstinputlisting{spl/emptylists.spl}
-The first one should obviously go right, because every element in the list can be map to a list of integers, which will result in a list of list of integers. The second one, this is not the case: we expect a list of integers, but a list with 2 empty lists will be mapped to a list of a list of something, and thus we get an error here: 
+The first one should obviously go right, because every element in the list can be map to a list of integers, which will result in a list of lists of integers. For the second one, this is not the case: we expect a list of integers, but a list with 2 empty lists will be mapped to a list of lists of items, and thus we get an error here:
 \begin{verbatim}
 Exception: [Line 2:7] Invalid assignment for id b
   Expected expression of type: ['Int']
     But got value of type: [[None]]
 \end{verbatim}
-The examples on line 4 and 5 should go right, since in both cases, the empty list can be mapped to either a list of list of Int or a generic list of list of `a'. Example 5 will fail because the integer 5 cannot be mapped to the generic type `a'. Example 5 is actually the same example as the one we show in section \ref{var-assign}. The example on line 8 combines the other examples with tuples. This should go right if all the other cases are type checked correctly. Luckily, this example is typed correctly with our type checker!
+The examples on line 4 and 5 should go right, since in both cases, the empty list can be mapped to either a list of lists of Int or a generic list of lists of `a'. Example 5 will fail because the integer 5 cannot be mapped to the generic type `a'. Example 5 is actually the same example as the one we show in section \ref{var-assign}. The example on line 8 combines the other examples with tuples. This should go right if all the other cases are type checked correctly. This example is typed correctly with our type checker as well.
 
 This is the pretty-printed output and the symbtol table of this program: 
 \begin{verbatim}
@@ -400,7 +395,7 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Function application with empty lists}
-In our next example, we will combine our function application with the empty lists. The code can be found in {\tt fnonemptylists.spl}.
+In our next example, we combine our function application with the empty lists. The code can be found in {\tt fnonemptylists.spl}.
 \lstinputlisting{spl/fnonemptylists.spl}
 The call on line 5 works, because we give this function a list of integers, which is possible because this can be mapped to the more generic type `b'. As a result, we get back a list of integers, which fits exactly in our variable `a' that is of type [Int]. For the call on line 6, the same holds, since the empty list fits in a list of integers. 
 
@@ -438,7 +433,7 @@ Position     Name            Type            Argtypes
 \label{var-assign}
 It is not allowed to assign an integer to a generic type, since these types do not match. Our next example demonstrates this. The code can be found in {\tt assignments.spl}. 
 \lstinputlisting{spl/assignments.spl}
-The assignment at line 19 should go wrong, since type `a' is not equal to type `int'. And indeed, we get an error when we uncomment that line: 
+The assignment at line 19 should go wrong, since type `a' is not equal to type `Int'. And indeed, we get an error when we uncomment that line: 
 \begin{verbatim}
 Exception: [Line 19:4] Invalid assignment for id x
   Expected expression of type: 'a'
@@ -540,7 +535,7 @@ If we disable this line (by putting it in comments), we can pretty-print and sho
 \begin{verbatim}
 [a] foo()
 {
-        return [];
+        return 5 : [];
 }
 Void call_foo()
 {
@@ -574,7 +569,7 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Unequal comparison}
-When we want to sort two lists and compare them, they should be of the same type. The program in the file {\tt unequalcomparisongenerics.spl} gives an example of this problem.
+When we want to sort two lists and compare them, they should be of the same type. The program in the file {\tt unequalcomparisongenerics.spl} gives an example of this problem. This is the program that was briefly discussed on the Blackboard at the second seminar.
 \lstinputlisting{spl/unequalcomparisongenerics.spl}
 The call at line 8 will produce an error, since a returned list of integers cannot be compared with a returned list of booleans. We will get the following error: 
 \begin{verbatim}
@@ -628,7 +623,7 @@ Position     Name            Type            Argtypes
 
 \subsection{Type of operators}
 
-Another interesting example is the use of different operators. We will show this with a program that calculates the product of the values in a list. This program can be found in {\tt operators.spl}.
+Another interesting example is the use of different operators. We show this with a program that calculates the product of the values in a list. This program can be found in {\tt operators.spl}.
 \lstinputlisting{spl/operators.spl}
 This is a rather basic program, since no generic types are used at all. However, we can use it to show that the *-operator expects two integers as arguments: if we replace the [Int] in the function header with [a], we get an error: 
 
@@ -712,7 +707,7 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Zip and tuples}
-With an example of the zip function, it follows that we are able to handle both lists and tuples with generic types. The code of this program can be found in {\tt zip.spl}. 
+From the example of the zip function (see below), it follows that we are able to handle both lists and tuples with generic types. The code of this program can be found in {\tt zip.spl}. 
 \lstinputlisting{spl/zip.spl}
 
 When we run this program, we get the following pretty-printed code and symbol table.
@@ -765,7 +760,7 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Pretty printer test}
-The next example is more aimed at the parser and pretty printer than the type checker: we want to demonstratie that our parser is working, and that the pretty printer will print our code in a correct way without unneeded braces. This code can be found in {\tt prettyprinttest.spl}.
+The next example is more aimed at the parser and pretty printer than the type checker: we want to demonstrate that our parser is working, and that the pretty printer will print our code in a correct way without unneeded braces. It does also test the type checker, though, as the types of all operators need to be correct for this to pass. This code can be found in {\tt prettyprinttest.spl}.
 \lstinputlisting{spl/prettyprinttest.spl}
 When we omit one brace at the end, our parser will complain:
 \begin{verbatim}
@@ -817,7 +812,7 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Shadowing}
-Functions and variables cannot have the same id, since this would create ambiguity, this can be demonstrated with the program found in {\tt shadowing.spl}.
+Functions and variables cannot have the same id, since this would create ambiguity. This is demonstrated with the program found in {\tt shadowing.spl}.
 \lstinputlisting{spl/shadowing.spl}
 The statement on line 13 will thus give an exception, since \emph{sum} is a var here: 
 \begin{verbatim}
@@ -832,7 +827,7 @@ When we uncomment the statements at line 11 and 12, we will get an warning about
 [Line 3:5] Previous definition was here
 \end{verbatim}
 
-But this is not an error: this program will still typecheck and pretty-print fine: 
+But this is not an error: this program will still pass the type checking and pretty-print fine: 
 \begin{verbatim}
 Int x = 42;
 Int sum([Int] xs)
