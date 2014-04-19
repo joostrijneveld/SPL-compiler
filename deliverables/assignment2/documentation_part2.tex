@@ -299,6 +299,19 @@ Applying the functions is then done using the following rules:
 
 Custom functions can be added using definitions, and applied in an identical fashion.
 
+\section{Scoping}
+% Ja geen idee, random verhaaltje hier doen? Of formele dingen?
+
+As we construct a global symbol table and function-specific symbol tables that inherit from the global table, a lot of the scoping hurdles have already been covered. In terms of environments, we first create a global environment $\Gamma$, and then create a duplicate $\Gamma'$ when checking a function. Variables that are defined within a function are added to $\Gamma'$, leaving $\Gamma$ untouched. Arguments are treated identically; they are functionally equivalent to variable declarations. Note that as there is no notion of functions within functions, the nesting depth of environments is limited to two.
+
+When variables are defined in $\Gamma'$ that already exist in the global scope $\Gamma$, they shadow the globally defined variable. This produces a warning, but does not lead to a fatal exception. However, variables should never be defined twice within the same environment; attempting to add a variable to some environment $\Gamma$ when it is already included leads to a fatal exception. This also includes overriding function arguments.
+
+It should also be noted that definitions of functions and variables can be in any order, as they are first added to the respective environments before the actual expressions are validated. They do need to be declared at one point: implicit declaration through assignment is not allowed. This also implies that there is no need to take care of {\tt if}-scopes, as these cannot contain new variable declarations. It is, however, important to note that the declaration order of variables is important for binding analysis (i.e. {\tt x = y; y = x;} is not allowed).
+
+With respect to generic types, it should perhaps be noted that generic types specified in the function header are bound by argument types, and cannot be used outside the function. This implies that duplicate generic type names between function definitions and function calls do not conflict.
+
+All scoping rules are explicitly enforced through fatal errors, meaning that the usage of unbound variables or the calling undefined functions does not result in undefined behaviour (like in {\tt C}), but simply terminates immediately with an exception.
+
 \newpage % vooruit dan :)
 \section{Example tests}
 \label{examples}
