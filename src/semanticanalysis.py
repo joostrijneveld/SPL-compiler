@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 
-import collections
 import sys
+from collections import namedtuple
 from functools import partial
 
-Symbol = collections.namedtuple('Symbol', ['line','col','type','argtypes'])
+Symbol = namedtuple('Symbol', ['line', 'col', 'type', 'argtypes', 'glob'])
 
 class Type:
 	def __init__(self, value):
@@ -65,16 +65,22 @@ def find_argtypes(tree):
 		return []
 	return [Type.from_node(tree.children[0])] + find_argtypes(tree.children[2])
 
-def update_symbols(symbols, sym, t, argtypes):
+def update_symbols(symbols, sym, t, argtypes, glob):
 	if sym.val in symbols:
 		oldsym = symbols[sym.val]
-		raise Exception("[Line {}:{}] Redefinition of {}\n"
-						"[Line {}:{}] Previous definition was here"
-						.format(sym.line, sym.col,
-							sym.val, oldsym.line, oldsym.col))
-	symbols.update({sym.val : Symbol(sym.line, sym.col, t, argtypes)})
+		if oldsym.glob:
+			sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"
+							"[Line {}:{}] Previous definition was here\n"
+							.format(sym.line, sym.col, sym.val,
+								oldsym.line, oldsym.col))
+		else:
+			raise Exception("[Line {}:{}] Redefinition of {}\n"
+							"[Line {}:{}] Previous definition was here"
+							.format(sym.line, sym.col,
+								sym.val, oldsym.line, oldsym.col))
+	symbols.update({sym.val : Symbol(sym.line, sym.col, t, argtypes, glob)})
 
-def create_table(tree, symtab):
+def create_table(tree, symtab, glob):
 	''' expects a tree with a Decl-node as root '''
 	if not tree:
 		return symtab
@@ -85,8 +91,8 @@ def create_table(tree, symtab):
 		argtypes = find_argtypes(tree.children[0].children[2])
 	if tree.children[0].tok == 'VarDecl':
 		check_vardecl(tree.children[0], symtab)
-	update_symbols(symtab, sym, t, argtypes)
-	return create_table(tree.children[1], symtab)
+	update_symbols(symtab, sym, t, argtypes, glob)
+	return create_table(tree.children[1], symtab, glob)
 
 def create_argtable(tree, symtab):
 	''' expects a tree with an arg-node (',') as root '''
@@ -94,7 +100,7 @@ def create_argtable(tree, symtab):
 		return symtab
 	t = Type.from_node(tree.children[0])
 	sym = tree.children[1].tok
-	update_symbols(symtab, sym, t, None)
+	update_symbols(symtab, sym, t, None, False)
 	return create_argtable(tree.children[2], symtab)
 
 def type_id(tree, symtab):
@@ -311,21 +317,12 @@ def check_vardecl(tree, symtab):
 							tree.children[1].tok.col, tree.children[1].tok.val,
 							vartype, exptype))
 
-def check_functionbinding(tree, globalsymboltable):
-	rettype = globalsymboltable[tree.children[1].tok.val].type
-	functionsymboltable = create_argtable(tree.children[2], dict())
-	functionsymboltable = create_table(tree.children[3], functionsymboltable)
-	for key in set(functionsymboltable.keys()) & set(globalsymboltable.keys()):
-		dupsym = functionsymboltable[key]
-		sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"
-						"[Line {}:{}] Previous definition was here\n"
-						.format(dupsym.line, dupsym.col, key,
-							globalsymboltable[key].line,
-							globalsymboltable[key].col))
-	symboltable = globalsymboltable.copy()
-	symboltable.update(functionsymboltable)
-	print_symboltable(symboltable)
-	returned = check_stmts(tree.children[4], symboltable, rettype)
+def check_functionbinding(tree, globalsymtab):
+	rettype = globalsymtab[tree.children[1].tok.val].type
+	symtab = create_argtable(tree.children[2], globalsymtab.copy())
+	symtab = create_table(tree.children[3], symtab, False)
+	print_symboltable(symtab)
+	returned = check_stmts(tree.children[4], symtab, rettype)
 	if not returned and rettype.unify(Type('Void')) is None:
 		raise Exception("[Line {}:{}] Missing return statement "
 						"in a non-Void function"
@@ -342,6 +339,6 @@ def check_localbinding(tree, globalsymboltable):
 	check_localbinding(tree.children[1], globalsymboltable)
 
 def check_binding(tree, globalsymboltable=dict()):
-	globalsymboltable.update(create_table(tree, dict()))
+	globalsymboltable.update(create_table(tree, dict(), True))
 	print_symboltable(globalsymboltable)
 	check_localbinding(tree, globalsymboltable)

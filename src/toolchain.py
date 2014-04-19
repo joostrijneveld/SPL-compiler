@@ -20,8 +20,8 @@ def main():
 	# print str(tree)
 	# prettyprinter.print_tree(tree)
 	predefined = {
-		'isEmpty' 	: Symbol(0, 0, Type('Bool'), [Type([Type('t')])]),
-		'print' 	: Symbol(0, 0, Type('Void'), [Type('t')])
+		'isEmpty' 	: Symbol(0, 0, Type('Bool'), [Type([Type('t')])], True),
+		'print' 	: Symbol(0, 0, Type('Void'), [Type('t')], True)
 		}
 	semanticanalysis.check_binding(tree, predefined)
 	
