@@ -7,7 +7,8 @@
 \usepackage{bussproofs} % for typing rules
 \usepackage[T1]{fontenc} % to prevent some unavailable font shape errors
 \usepackage{amssymb}
-\usepackage[ttscale=.875, ]{libertine}
+%\usepackage[ttscale=.875, ]{libertine}
+\usepackage{libertine} % For Ubuntu
 
 \EnableBpAbbreviations
 
@@ -314,17 +315,18 @@ All scoping rules are explicitly enforced through fatal errors, meaning that the
 \subsection{General function application}
 The file {\tt fnapplication.spl} is an example of a program that tests the function application and whether the number and type of arguments of the function call matches with the header.
 \lstinputlisting{spl/fnapplication.spl}
-The call on line 7 is the only correct function call in this program: only in this case do the number and type of arguments match. In the other cases, we get an error: 
-
-% Verbatim doen hier?
+The call on line 8 is the only correct function call in this program: only in this case do the number and type of arguments match. In the other cases, we get an error: 
 \begin{verbatim}
 Exception: [Line 8:2] Incompatible number of arguments for function 'foo'.
   Arguments expected: 1
     Arguments found: 0
 \end{verbatim}
-
-As a result, we get the following pretty-printed program and symbol table: 
-
+Another error is the unreachable code on line 4: because this code is listed after a return statement, this cannot be executed. Our compiler does not accept this code and produces an error: 
+\begin{verbatim}
+Exception: [Line 4:4] Unreachable code detected
+  If this is intentional, enclose it in comments
+\end{verbatim}
+If we fix both errors, we get the following pretty-printed program and symbol table: 
 \begin{verbatim}
 Void foo(Int x)
 {
@@ -433,9 +435,14 @@ Position     Name            Type            Argtypes
 \label{var-assign}
 It is not allowed to assign an integer to a generic type, since these types do not match. Our next example demonstrates this. The code can be found in {\tt assignments.spl}. 
 \lstinputlisting{spl/assignments.spl}
-The assignment at line 19 should go wrong, since type `a' is not equal to type `Int'. And indeed, we get an error when we uncomment that line: 
+The assignment at line 18 should go wrong, because `y' is unknown here and thus cannot be assigned to `x':
 \begin{verbatim}
-Exception: [Line 19:4] Invalid assignment for id x
+Exception: [Line 18:11] Found id y, but it has not been defined
+\end{verbatim}
+
+The assignment at line 20 should also go wrong, since type `a' is not equal to type `Int'. And indeed, we get an error when we uncomment that line: 
+\begin{verbatim}
+Exception: [Line 20:4] Invalid assignment for id x
   Expected expression of type: 'a'
   But got value of type: 'Int'
 \end{verbatim}
@@ -511,7 +518,7 @@ Position     Name            Type            Argtypes
 ==============================================================
 Position     Name            Type            Argtypes            
 --------------------------------------------------------------
-18:7         y               'Bool'          None                
+19:7         y               'Bool'          None                
 0:0          isEmpty         'Bool'          ['t']               
 5:5          count_to_ten    'Int'                               
 0:0          print           'Void'          't'                 

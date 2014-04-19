@@ -1,6 +1,7 @@
 Void foo(Int x) {
 	[Int] xs = x : [];
 	return;
+	// x = x + 1; // This is dead code
 }
 
 Void call_foo() {
