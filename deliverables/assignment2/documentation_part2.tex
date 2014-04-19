@@ -53,7 +53,10 @@ Our submission contains the following files:
 
 \newpage % vooruit dan :)
 \section{Typing rules}
-% Joost: zet ff je fijne package hier neer
+
+Note that many of these rules are directly derived from the rules as provided for {\tt SL} in the lecture slides, or are slight variations thereof.
+
+The two basic types, {\tt Int} and {\tt Bool}, are defined by the following axioms. Note that integers are from $\mathbb{N}$ rather than $\mathbb{Z}$, as negative integers are typed using the unary negation operator.
 
 {\sf
 \begin{prooftree}
@@ -71,6 +74,87 @@ Our submission contains the following files:
 \end{prooftree}
 }
 
+To deal with the operators, we rely on the following two rules -- one for binary and one of unary operators, respectively.
+
+{\sf
+\begin{prooftree}
+  \AXC{$\odot : \sigma_1 \rightarrow \sigma_2 \rightarrow \tau$}
+  \AXC{$\Gamma \vdash e_1 : \sigma_1$}
+  \AXC{$\Gamma \vdash e_2 : \sigma_2$}
+  \RightLabel{\sc \small (BinOp)}
+  \TIC{$\Gamma \vdash e_1 \odot e_2 : \tau$}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{$\odot : \sigma \rightarrow \tau$}
+  \AXC{$\Gamma \vdash e : \sigma$}
+  \RightLabel{\sc \small (UnOp)}
+  \BIC{$\Gamma \vdash \odot$ $e : \tau$}
+\end{prooftree}
+}
+
+These rules can be `instantiated' by applying the axioms below.
+
+{\sf
+\begin{prooftree}
+  \AXC{}
+  \RightLabel{\sc \small (Arith)}
+  \UIC{$\odot \in ${\tt \{+, -, *, /, \%\}} $:$ {\tt Int} $\rightarrow$ {\tt Int} $ \rightarrow$ {\tt Int}}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{}
+  \RightLabel{\sc \small (Cmp)}
+  \UIC{$\odot \in ${\tt \{<=, <, >=, >\}} $:$ {\tt Int} $\rightarrow$ {\tt Int} $ \rightarrow$ {\tt Bool}}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{}
+  \RightLabel{\sc \small (GenCmp)}
+  \UIC{$\odot \in ${\tt \{==, !=\}} $: \sigma \rightarrow \sigma \rightarrow$ {\tt Bool}}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{}
+  \RightLabel{\sc \small (BoolOp)}
+  \UIC{$\odot \in ${\tt \{\&\&, ||\}} $:$ {\tt Bool} $\rightarrow$ {\tt Bool} $ \rightarrow$ {\tt Bool}}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{}
+  \RightLabel{\sc \small (Cons)}
+  \UIC{{\tt :} $: \sigma \rightarrow [\sigma] \rightarrow [\sigma]$}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{}
+  \RightLabel{\sc \small (Neg)}
+  \UIC{{\tt -} $:$ {\tt Int} $ \rightarrow$ {\tt Int}}
+\end{prooftree}
+}
+
+{\sf
+\begin{prooftree}
+  \AXC{}
+  \RightLabel{\sc \small (Inv)}
+  \UIC{{\tt -} $:$ {\tt Bool} $ \rightarrow$ {\tt Bool}}
+\end{prooftree}
+}
+
+Note that the `cons'-operator is often dealt with separately, but this is not required for our specific case. Complications regarding associativity are already dealt with in the grammar. This means we can just include it as a binary operator, above. Creating tuples does require a distinct rule:
+
 {\sf
 \begin{prooftree}
   \AXC{$\Gamma \vdash e_1 : \sigma_1$}
@@ -80,24 +164,128 @@ Our submission contains the following files:
 \end{prooftree}
 }
 
-{\sf
-\begin{prooftree}
-  \AXC{$\odot : \sigma_1 \rightarrow \sigma_2 \rightarrow \tau$}
-  \AXC{$\Gamma \vdash e_1 : \sigma_1$}
-  \AXC{$\Gamma \vdash e_2 : \sigma_2$}
-  \RightLabel{\sc \small (Bin op)}
-  \TIC{$\Gamma \vdash e_1 \odot e_2 : \tau$}
-\end{prooftree}
-}
+Variables can be derived from the environment as follows:
 
 {\sf
 \begin{prooftree}
-  \AXC{$\Gamma \vdash e_1 : \sigma$}
-  \AXC{$\Gamma \vdash e_2 : [\sigma]$}
-  \RightLabel{\sc \small (Cons)}
-  \BIC{$\Gamma \vdash (e_1, e_2) : [\sigma]$}
+  \AXC{$x : \sigma \in \Gamma$}
+  \RightLabel{\sc \small (Var)}
+  \UIC{$\Gamma \vdash ${\tt x}$ : \sigma$}
 \end{prooftree}
 }
+
+For function calls, instances of the following type rule can be used:
+
+{\sf
+\begin{prooftree}
+  \AXC{{\tt f} $: \sigma_1 \rightarrow \ldots \rightarrow \sigma_n \rightarrow \tau \in \Gamma$}
+  \RightLabel{\sc \small (Fn)}
+  \UIC{$\Gamma \vdash$ {\tt f($e_1$, $\ldots$, $e_n$)} $: \tau$}
+\end{prooftree}
+}
+
+We can now create axioms for the {\tt isEmpty} and {\tt print}-functions using instances of the above rule:
+
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{}
+    \RightLabel{\sc \small (Fn)}
+    \UIC{{\tt isEmpty} $: [\sigma] \rightarrow$ {\tt Bool} $\in \Gamma$}
+  \end{prooftree}
+  }
+}
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{}
+    \RightLabel{\sc \small (Fn)}
+    \UIC{{\tt print} $: \sigma \rightarrow$ {\tt Void} $\in \Gamma$}
+  \end{prooftree}
+  }
+}
+
+The functions {\tt hd}, {\tt tl}, {\tt fst} and {\tt snd} are written postfix in {\tt SPL}, so it requires a transformation to get them to fit to the above rules. We define axioms to add their transformed forms to the environment, and unary transformation rules such that they fit in {\sc \small (Fn)}. Note that this could be resolved in a more compact fashion by immediately jumping to the axioms, but the approach below provides more consistency with `regular' functions.
+
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{}
+    \RightLabel{\sc \small (Hd)}
+    \UIC{{\tt hd} $: [\sigma] \rightarrow \sigma \in \Gamma$}
+  \end{prooftree}
+  }
+}
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{}
+    \RightLabel{\sc \small (Fst)}
+    \UIC{{\tt fst} $: (\sigma_1, \sigma_2) \rightarrow \sigma_1 \in \Gamma$}
+  \end{prooftree}
+  }
+}
+
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{}
+    \RightLabel{\sc \small (Tl)}
+    \UIC{{\tt tl} $: [\sigma] \rightarrow [\sigma] \in \Gamma$}
+  \end{prooftree}
+  }
+}
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{}
+    \RightLabel{\sc \small (Snd)}
+    \UIC{{\tt snd} $: (\sigma_1, \sigma_2) \rightarrow \sigma_2 \in \Gamma$}
+  \end{prooftree}
+  }
+}
+
+Applying the functions is then done using the following rules:
+
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{$\Gamma \vdash$ {\tt hd($e$)} $: \sigma$}
+    \RightLabel{\sc \small (HdApp)}
+    \UIC{$\Gamma \vdash$ $e${\tt .hd} $: \sigma$}
+  \end{prooftree}
+  }
+}
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{$\Gamma \vdash$ {\tt fst($e$)} $: \sigma$}
+    \RightLabel{\sc \small (FstApp)}
+    \UIC{$\Gamma \vdash$ $e${\tt .fst} $: \sigma$}
+  \end{prooftree}
+  }
+}
+
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{$\Gamma \vdash$ {\tt tl($e$)} $: \sigma$}
+    \RightLabel{\sc \small (TlApp)}
+    \UIC{$\Gamma \vdash$ $e${\tt .tl} $: \sigma$}
+  \end{prooftree}
+  }
+}
+\parbox{.5\linewidth}{
+  {\sf
+  \begin{prooftree}
+    \AXC{$\Gamma \vdash$ {\tt snd($e$)} $: \sigma$}
+    \RightLabel{\sc \small (SndApp)}
+    \UIC{$\Gamma \vdash$ $e${\tt .snd} $: \sigma$}
+  \end{prooftree}
+  }
+}
+
+Custom functions can be added using definitions, and applied in an identical fashion.
 
 \newpage % vooruit dan :)
 \section{Example tests}
@@ -414,9 +602,11 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 \subsection{Type of operators}
+
 Another interesting example is the use of different operators. We will show this with a program that calculates the product of the values in a list. This program can be found in {\tt operators.spl}.
 \lstinputlisting{spl/operators.spl}
 This is a rather basic program, since no generic types are used at all. However, we can use it to show that the *-operator expects two integers as arguments: if we replace the [Int] in the function header with [a], we get an error: 
+
 \begin{verbatim}
 Exception: [Line 5:17] Incompatible types for operator *
   Types expected: 'Int', 'Int'
