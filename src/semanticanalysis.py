@@ -196,12 +196,7 @@ def apply_gentab(tree, t, gentab):
 	if t.value in ['Int', 'Bool', 'Void']:
 		return t
 	if type(t.value) is str:
-		if t.value not in gentab:
-			raise Exception("[Line {}:{}] Generic return type {} not bound by "
-							"arguments of function '{}', so cannot be resolved."
-							.format(tree.tok.line, tree.tok.col, t,
-								tree.children[0].tok.val))
-		return gentab[t.value]
+		return gentab[t.value] # validated that it is always in the gentab
 	if type(t.value) is tuple:
 		return Type((apply_gentab(tree, t.value[0], gentab),
 				apply_gentab(tree, t.value[1], gentab)))
@@ -317,9 +312,38 @@ def check_vardecl(tree, symtab):
 							tree.children[1].tok.col, tree.children[1].tok.val,
 							vartype, exptype))
 
+def list_generics(t):
+	if t.value in ['Int', 'Bool', 'Void']:
+		return set()
+	if type(t.value) is str: 
+		return set([t.value])
+	if type(t.value) is tuple:
+		return list_generics(t.value[0]) | list_generics(t.value[1])
+	if type(t.value) is list:
+		return list_generics(t.value[0])
+	return set([])
+
+def check_rettype_binding(tree, rettype, symtab):
+	'''checks if all generics that occur in rettype are bound by the symtab'''
+	boundgenerics = set()
+	for key, s in symtab.iteritems():
+		if s.argtypes == None:
+			boundgenerics |= list_generics(s.type)
+	retgens = list_generics(rettype)
+	unbound = retgens - boundgenerics
+	if len(unbound) > 0:
+		raise Exception("[Line {}:{}] Generic return type{} '{}' of function "
+						"{} not bound by arguments, so cannot be resolved."
+						.format(tree.children[1].tok.line,
+							tree.children[1].tok.col,
+							's' if len(unbound) > 1 else '',
+							', '.join(str(t) for t in sorted(unbound)),
+							tree.children[1].tok.val))
+	
 def check_functionbinding(tree, globalsymtab):
 	rettype = globalsymtab[tree.children[1].tok.val].type
 	symtab = create_argtable(tree.children[2], globalsymtab.copy())
+	check_rettype_binding(tree, rettype, symtab)
 	symtab = create_table(tree.children[3], symtab, False)
 	print_symboltable(symtab)
 	returned = check_stmts(tree.children[4], symtab, rettype)
