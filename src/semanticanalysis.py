@@ -109,27 +109,6 @@ def type_id(tree, symtab):
 				.format(tree.tok.line, tree.tok.col, tree.tok.val))
 	return symtab[tree.tok.val].type
 
-def type_exp_field(tree, symtab):
-	if tree.tok.type == 'id':
-		return type_id(tree, symtab)
-	t = type_exp_field(tree.children[0], symtab)
-	if type(t.value) is list:
-		if tree.tok.type == '.hd':
-			return t.value[0]
-		elif tree.tok.type == '.tl':
-			return t
-		raise Exception("[Line {}:{}] Got list, but cannot apply: '{}'"
-				.format(tree.tok.line, tree.tok.col, tree.tok.type))
-	elif type(t.value) is tuple:
-		if tree.tok.type == '.fst':
-			return t.value[0]
-		elif tree.tok.type == '.snd':
-			return t.value[1]
-		raise Exception("[Line {}:{}] Got tuple, but cannot apply: '{}'"
-						.format(tree.tok.line, tree.tok.col, tree.tok.type))
-	raise Exception("[Line {}:{}] Cannot apply '{}' to symbol of type {} "
-			.format(tree.tok.line, tree.tok.col, tree.tok.type, t))
-	
 def type_exp_base(tree, symtab):
 	if tree.tok.type == 'int':
 		return Type('Int')
@@ -146,7 +125,7 @@ def type_exp_base(tree, symtab):
 			type_exp(tree.children[1], symtab)))
 	else:
 		return type_exp_field(tree,symtab)
-		
+
 def type_op(fn, in_types, out_type, ops, tree, symtab):
 	if tree.tok.type in ops:
 		rev_types = map(partial(type_exp, symtab=symtab), tree.children)
@@ -160,6 +139,16 @@ def type_op(fn, in_types, out_type, ops, tree, symtab):
 								', '.join(map(str, rev_types))))
 		return apply_gentab(tree, out_type, gentab)
 	return fn(tree, symtab)
+
+type_exp_hd = partial(type_op, type_id,
+	[Type([Type('t')])], Type('t'), '.hd')
+type_exp_tl = partial(type_op, type_exp_hd,
+	[Type([Type('t')])], Type([Type('t')]), '.tl')
+type_exp_fst = partial(type_op, type_exp_tl,
+	[Type((Type('a'),Type('b')))], Type('a'), '.fst')
+type_exp_snd = partial(type_op, type_exp_fst,
+	[Type((Type('a'),Type('b')))], Type('b'), '.snd')
+type_exp_field = type_exp_snd
 
 type_exp_unint = partial(type_op, type_exp_base,
 	[Type('Int')], Type('Int'), ['-'])
