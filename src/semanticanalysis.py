@@ -310,7 +310,6 @@ def list_generics(t):
 		return list_generics(t.value[0]) | list_generics(t.value[1])
 	if type(t.value) is list:
 		return list_generics(t.value[0])
-	return set([])
 
 def check_rettype_binding(tree, rettype, symtab):
 	'''checks if all generics that occur in rettype are bound by the symtab'''
@@ -318,8 +317,7 @@ def check_rettype_binding(tree, rettype, symtab):
 	for key, s in symtab.iteritems():
 		if s.argtypes == None:
 			boundgenerics |= list_generics(s.type)
-	retgens = list_generics(rettype)
-	unbound = retgens - boundgenerics
+	unbound = list_generics(rettype) - boundgenerics
 	if len(unbound) > 0:
 		raise Exception("[Line {}:{}] Generic return type{} '{}' of function "
 						"{} not bound by arguments, so cannot be resolved."
