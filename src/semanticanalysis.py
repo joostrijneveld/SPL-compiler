@@ -48,16 +48,18 @@ class Type:
 			return self
 		return None
 
-def print_symboltable(symboltable):
-	print '='*62
-	print ("{0: <12} {1: <15} {2: <15} {3: <20}"
-			.format('Position', 'Name', 'Type', 'Argtypes'))
-	print '-'*62
-	for k, v in symboltable.iteritems():
-		argvstring =  ", ".join(map(str, v.argtypes)) if v.argtypes != None else None
-		print ("{: <12} {: <15} {: <15} {: <20}"
-				.format("{0.line}:{0.col}".format(v), k, v.type, argvstring))
-	print '='*62
+def print_symboltables(symtabs):
+	def print_symboltable(symboltable):
+		print '='*62
+		print ("{0: <12} {1: <15} {2: <15} {3: <20}"
+				.format('Position', 'Name', 'Type', 'Argtypes'))
+		print '-'*62
+		for k, v in symboltable.iteritems():
+			argvstring =  ", ".join(map(str, v.argtypes)) if v.argtypes != None else None
+			print ("{: <12} {: <15} {: <15} {: <20}"
+					.format("{0.line}:{0.col}".format(v), k, v.type, argvstring))
+		print '='*62
+	map(print_symboltable, symtabs.itervalues())
 
 def find_argtypes(tree):
 	''' expects a tree with an arg-node (',') as root '''
@@ -332,24 +334,28 @@ def check_functionbinding(tree, globalsymtab):
 	symtab = create_argtable(tree.children[2], globalsymtab.copy())
 	check_rettype_binding(tree, rettype, symtab)
 	symtab = create_table(tree.children[3], symtab, False)
-	print_symboltable(symtab)
 	returned = check_stmts(tree.children[4], symtab, rettype)
 	if not returned and rettype.unify(Type('Void')) is None:
 		raise Exception("[Line {}:{}] Missing return statement "
 						"in a non-Void function"
 						.format(tree.children[1].tok.line,
 								tree.children[1].tok.col))
+	return symtab
 
-def check_localbinding(tree, globalsymboltable):
+def check_localbinding(tree, globalsymtab, symtabs):
 	if not tree:
 		return
 	if tree.children[0].tok == 'FunDecl':
-		check_functionbinding(tree.children[0], globalsymboltable)
+		fname = tree.children[0].children[1].tok.val
+		symtabs[fname] = check_functionbinding(tree.children[0], globalsymtab)
 	elif tree.children[0].tok == 'VarDecl':
-		check_vardecl(tree.children[0], globalsymboltable)
-	check_localbinding(tree.children[1], globalsymboltable)
+		check_vardecl(tree.children[0], globalsymtab)
+	check_localbinding(tree.children[1], globalsymtab, symtabs)
 
-def check_binding(tree, globalsymboltable=dict()):
-	globalsymboltable.update(create_table(tree, dict(), True))
-	print_symboltable(globalsymboltable)
-	check_localbinding(tree, globalsymboltable)
+def check_binding(tree, globalsymtab=dict()):
+	globalsymtab.update(create_table(tree, dict(), True))
+	symtabs = dict()
+	symtabs['_global'] = globalsymtab
+	check_localbinding(tree, globalsymtab, symtabs)
+	print_symboltables(symtabs)
+	return symtabs

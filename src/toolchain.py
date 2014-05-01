@@ -4,6 +4,7 @@
 import sys
 import parser, scanner, prettyprinter
 import semanticanalysis
+import generator
 from semanticanalysis import Type, Symbol
 
 def help():
@@ -17,13 +18,14 @@ def main():
 		return
 	tokens = scanner.scan_spl(sys.argv[1])
 	tree = parser.build_tree(tokens)
-	# print str(tree)
+	print str(tree)
 	# prettyprinter.print_tree(tree)
 	predefined = {
 		'isEmpty' 	: Symbol(0, 0, Type('Bool'), [Type([Type('t')])], True),
 		'print' 	: Symbol(0, 0, Type('Void'), [Type('t')], True)
 	}
-	semanticanalysis.check_binding(tree, predefined)
+	symtabs = semanticanalysis.check_binding(tree, predefined)
+	generator.generate_ssm(tree, symtabs, 'out.ssm')
 	
 if __name__ == '__main__':
 	main()
