@@ -349,15 +349,13 @@ def check_functionbinding(tree, globalsymtab, fname):
 						.format(tree.children[1].tok.line,
 								tree.children[1].tok.col))
 
-def check_localbinding(tree, globalsymtab):
+def check_uncalled_functions(tree, globalsymtab):
 	if not tree:
 		return
 	if tree.children[0].tok == 'FunDecl':
 		fname = tree.children[0].children[1].tok.val
 		check_functionbinding(tree.children[0], globalsymtab, fname)
-	elif tree.children[0].tok == 'VarDecl':
-		check_vardecl(tree.children[0], globalsymtab)
-	check_localbinding(tree.children[1], globalsymtab)
+	check_uncalled_functions(tree.children[1], globalsymtab)
 
 symtabs = None
 
@@ -367,6 +365,6 @@ def check_binding(tree, globalsymtab=dict()):
 	symtabs['_glob'] = dict(globalsymtab)
 	symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, False))
 	symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, True))
-	check_localbinding(tree, symtabs['_glob'])
+	check_uncalled_functions(tree, symtabs['_glob'])
 	print_symboltables(symtabs)
 	return symtabs
