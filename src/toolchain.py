@@ -21,8 +21,8 @@ def main():
 	print str(tree)
 	# prettyprinter.print_tree(tree)
 	predefined = {
-		'isEmpty' : Symbol(0, 0, Type('Bool'), [Type([Type('t')])], True, None),
-		'print'   : Symbol(0, 0, Type('Void'), [Type('t')], True, None)
+		'isEmpty': Symbol(0, 0, Type('Bool'), [Type([Type('t')])], True, None),
+		'print'  : Symbol(0, 0, Type('Void'), [Type('t')], True, None)
 	}
 	symtabs = semanticanalysis.check_binding(tree, predefined)
 	generator.generate_ssm(tree, symtabs, 'out.ssm')

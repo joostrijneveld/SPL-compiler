@@ -27,7 +27,8 @@ class Type:
 		return repr(self.value)
 	
 	def unify(self, other):
-		''' attempts to unify non-generic types (necessary for empty lists) '''
+		''' attempts to unify non-generic types (necessary for empty lists)
+			return value None means no unification could be found '''
 		if type(self.value) is tuple and type(other.value) is tuple:
 			left = self.value[0].unify(other.value[0])
 			right = self.value[1].unify(other.value[1])
@@ -43,9 +44,9 @@ class Type:
 			if self.value == other.value:
 				return self
 			return None
-		if self.value == None:
+		if self.value is None:
 			return other
-		if other.value == None:
+		if other.value is None:
 			return self
 		return None
 
@@ -91,13 +92,12 @@ def create_table(tree, symtab, glob, vardecls):
 		return symtab
 	t = Type.from_node(tree.children[0].children[0])
 	sym = tree.children[0].children[1].tok
-	argtypes = None  # VarDecls do not have arguments
 	if tree.children[0].tok == 'FunDecl' and not vardecls:
 		argtypes = find_argtypes(tree.children[0].children[2])
 		update_symtab(symtab, sym, t, argtypes, glob, tree=tree.children[0])
 	if tree.children[0].tok == 'VarDecl' and vardecls:
 		check_vardecl(tree.children[0], symtab)
-		update_symtab(symtab, sym, t, argtypes, glob)
+		update_symtab(symtab, sym, t, None, glob)
 	return create_table(tree.children[1], symtab, glob, vardecls)
 
 def create_argtable(tree, symtab):
@@ -221,18 +221,16 @@ def apply_generics(gen_type, lit_type, gentab):
 def check_funcall(tree, symtab):
 	fname = tree.children[0].tok.val
 	funsym = symtab[fname]
-	if funsym.argtypes == None:
+	if funsym.argtypes is None:
 		raise Exception("[Line {}:{}] '{}' is a variable, not a function."
-						.format(tree.tok.line, tree.tok.col,
-							tree.children[0].tok.val))
+						.format(tree.tok.line, tree.tok.col, fname))
 	received = type_expargs(tree.children[1], symtab)
 	if not len(funsym.argtypes) == len(received):
 		raise Exception("[Line {}:{}] Incompatible number of arguments "
 						"for function '{}'.\n"
 						"  Arguments expected: {}\n"
 						"  Arguments found: {}"
-						.format(tree.tok.line, tree.tok.col,
-							tree.children[0].tok.val,
+						.format(tree.tok.line, tree.tok.col, fname,
 							len(funsym.argtypes), len(received)))
 	gentab = dict()
 	if (not all(apply_generics(e, r, gentab)
@@ -241,8 +239,7 @@ def check_funcall(tree, symtab):
 						"for function '{}'.\n"
 						"  Types expected: {}\n"
 						"  Types found: {}"
-						.format(tree.tok.line, tree.tok.col,
-							tree.children[0].tok.val,
+						.format(tree.tok.line, tree.tok.col, fname,
 							', '.join(map(str, funsym.argtypes)),
 							', '.join(map(str, received))))
 	check_functionbinding(funsym.tree, symtab, fname)
@@ -323,7 +320,7 @@ def check_rettype_binding(tree, rettype, symtab):
 	'''checks if all generics that occur in rettype are bound by the symtab'''
 	boundgenerics = set()
 	for key, s in symtab.iteritems():
-		if s.argtypes == None:
+		if s.argtypes is None:
 			boundgenerics |= list_generics(s.type)
 	unbound = list_generics(rettype) - boundgenerics
 	if len(unbound) > 0:
@@ -337,7 +334,7 @@ def check_rettype_binding(tree, rettype, symtab):
 	
 def check_functionbinding(tree, globalsymtab, fname):
 	if fname in symtabs:
-		return symtabs[fname] # to prevent infinite left-recursion
+		return symtabs[fname] # to prevent infinite left-recursion via funcall
 	rettype = globalsymtab[tree.children[1].tok.val].type
 	symtabs[fname] = create_argtable(tree.children[2], globalsymtab.copy())
 	check_rettype_binding(tree, rettype, symtabs[fname])
