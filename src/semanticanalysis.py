@@ -70,7 +70,7 @@ def find_argtypes(tree):
 def update_symbols(symbols, sym, t, argtypes, glob):
 	if sym.val in symbols:
 		oldsym = symbols[sym.val]
-		if oldsym.glob:
+		if oldsym.glob and not glob:
 			sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"
 							"[Line {}:{}] Previous definition was here\n"
 							.format(sym.line, sym.col, sym.val,
@@ -82,19 +82,20 @@ def update_symbols(symbols, sym, t, argtypes, glob):
 								sym.val, oldsym.line, oldsym.col))
 	symbols.update({sym.val : Symbol(sym.line, sym.col, t, argtypes, glob)})
 
-def create_table(tree, symtab, glob):
+def create_table(tree, symtab, glob, vardecls):
 	''' expects a tree with a Decl-node as root '''
 	if not tree:
 		return symtab
 	t = Type.from_node(tree.children[0].children[0])
 	sym = tree.children[0].children[1].tok
 	argtypes = None  # VarDecls do not have arguments
-	if tree.children[0].tok == 'FunDecl':
+	if tree.children[0].tok == 'FunDecl' and not vardecls:
 		argtypes = find_argtypes(tree.children[0].children[2])
-	if tree.children[0].tok == 'VarDecl':
+		update_symbols(symtab, sym, t, argtypes, glob)
+	if tree.children[0].tok == 'VarDecl' and vardecls:
 		check_vardecl(tree.children[0], symtab)
-	update_symbols(symtab, sym, t, argtypes, glob)
-	return create_table(tree.children[1], symtab, glob)
+		update_symbols(symtab, sym, t, argtypes, glob)
+	return create_table(tree.children[1], symtab, glob, vardecls)
 
 def create_argtable(tree, symtab):
 	''' expects a tree with an arg-node (',') as root '''
@@ -333,7 +334,7 @@ def check_functionbinding(tree, globalsymtab):
 	rettype = globalsymtab[tree.children[1].tok.val].type
 	symtab = create_argtable(tree.children[2], globalsymtab.copy())
 	check_rettype_binding(tree, rettype, symtab)
-	symtab = create_table(tree.children[3], symtab, False)
+	symtab = create_table(tree.children[3], symtab, False, True)
 	returned = check_stmts(tree.children[4], symtab, rettype)
 	if not returned and rettype.unify(Type('Void')) is None:
 		raise Exception("[Line {}:{}] Missing return statement "
@@ -353,7 +354,8 @@ def check_localbinding(tree, globalsymtab, symtabs):
 	check_localbinding(tree.children[1], globalsymtab, symtabs)
 
 def check_binding(tree, globalsymtab=dict()):
-	globalsymtab.update(create_table(tree, dict(), True))
+	globalsymtab.update(create_table(tree, dict(), True, False))
+	globalsymtab.update(create_table(tree, globalsymtab, True, True))
 	symtabs = dict()
 	symtabs['_global'] = globalsymtab
 	check_localbinding(tree, globalsymtab, symtabs)
