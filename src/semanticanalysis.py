@@ -4,7 +4,8 @@ import sys
 from collections import namedtuple
 from functools import partial
 
-Symbol = namedtuple('Symbol', ['line', 'col', 'type', 'argtypes', 'glob'])
+Symbol = namedtuple('Symbol',
+	['line', 'col', 'type', 'argtypes', 'glob', 'tree'])
 
 class Type:
 	def __init__(self, value):
@@ -49,8 +50,10 @@ class Type:
 		return None
 
 def print_symboltables(symtabs):
-	def print_symboltable(symboltable):
-		print '='*62
+	def print_symboltable((fname, symboltable)):
+		if not symboltable:
+			return
+		print "{:=^62}".format(" {} ".format(fname))
 		print ("{0: <12} {1: <15} {2: <15} {3: <20}"
 				.format('Position', 'Name', 'Type', 'Argtypes'))
 		print '-'*62
@@ -59,7 +62,7 @@ def print_symboltables(symtabs):
 			print ("{: <12} {: <15} {: <15} {: <20}"
 					.format("{0.line}:{0.col}".format(v), k, v.type, argvstring))
 		print '='*62
-	map(print_symboltable, symtabs.itervalues())
+	map(print_symboltable, symtabs.iteritems())
 
 def find_argtypes(tree):
 	''' expects a tree with an arg-node (',') as root '''
@@ -67,20 +70,20 @@ def find_argtypes(tree):
 		return []
 	return [Type.from_node(tree.children[0])] + find_argtypes(tree.children[2])
 
-def update_symbols(symbols, sym, t, argtypes, glob):
-	if sym.val in symbols:
-		oldsym = symbols[sym.val]
+def update_symtab(symtab, tok, t, argtypes, glob, tree=None):
+	if tok.val in symtab:
+		oldsym = symtab[tok.val]
 		if oldsym.glob and not glob:
 			sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"
 							"[Line {}:{}] Previous definition was here\n"
-							.format(sym.line, sym.col, sym.val,
+							.format(tok.line, tok.col, tok.val,
 								oldsym.line, oldsym.col))
 		else:
 			raise Exception("[Line {}:{}] Redefinition of {}\n"
 							"[Line {}:{}] Previous definition was here"
-							.format(sym.line, sym.col,
-								sym.val, oldsym.line, oldsym.col))
-	symbols.update({sym.val : Symbol(sym.line, sym.col, t, argtypes, glob)})
+							.format(tok.line, tok.col,
+								tok.val, oldsym.line, oldsym.col))
+	symtab.update({tok.val: Symbol(tok.line, tok.col, t, argtypes, glob, tree)})
 
 def create_table(tree, symtab, glob, vardecls):
 	''' expects a tree with a Decl-node as root '''
@@ -91,10 +94,10 @@ def create_table(tree, symtab, glob, vardecls):
 	argtypes = None  # VarDecls do not have arguments
 	if tree.children[0].tok == 'FunDecl' and not vardecls:
 		argtypes = find_argtypes(tree.children[0].children[2])
-		update_symbols(symtab, sym, t, argtypes, glob)
+		update_symtab(symtab, sym, t, argtypes, glob, tree=tree.children[0])
 	if tree.children[0].tok == 'VarDecl' and vardecls:
 		check_vardecl(tree.children[0], symtab)
-		update_symbols(symtab, sym, t, argtypes, glob)
+		update_symtab(symtab, sym, t, argtypes, glob)
 	return create_table(tree.children[1], symtab, glob, vardecls)
 
 def create_argtable(tree, symtab):
@@ -103,7 +106,7 @@ def create_argtable(tree, symtab):
 		return symtab
 	t = Type.from_node(tree.children[0])
 	sym = tree.children[1].tok
-	update_symbols(symtab, sym, t, None, False)
+	update_symtab(symtab, sym, t, None, False)
 	return create_argtable(tree.children[2], symtab)
 
 def type_id(tree, symtab):
@@ -216,31 +219,33 @@ def apply_generics(gen_type, lit_type, gentab):
 	return False
 
 def check_funcall(tree, symtab):
-	expected = symtab[tree.children[0].tok.val].argtypes
-	if expected == None:
+	fname = tree.children[0].tok.val
+	funsym = symtab[fname]
+	if funsym.argtypes == None:
 		raise Exception("[Line {}:{}] '{}' is a variable, not a function."
 						.format(tree.tok.line, tree.tok.col,
 							tree.children[0].tok.val))
 	received = type_expargs(tree.children[1], symtab)
-	if not len(expected) == len(received):
+	if not len(funsym.argtypes) == len(received):
 		raise Exception("[Line {}:{}] Incompatible number of arguments "
 						"for function '{}'.\n"
 						"  Arguments expected: {}\n"
 						"  Arguments found: {}"
 						.format(tree.tok.line, tree.tok.col,
 							tree.children[0].tok.val,
-							len(expected), len(received)))
+							len(funsym.argtypes), len(received)))
 	gentab = dict()
 	if (not all(apply_generics(e, r, gentab)
-		for e, r in zip(expected, received))):
+		for e, r in zip(funsym.argtypes, received))):
 		raise Exception("[Line {}:{}] Incompatible argument types "
 						"for function '{}'.\n"
 						"  Types expected: {}\n"
 						"  Types found: {}"
 						.format(tree.tok.line, tree.tok.col,
 							tree.children[0].tok.val,
-							', '.join(map(str, expected)),
+							', '.join(map(str, funsym.argtypes)),
 							', '.join(map(str, received))))
+	check_functionbinding(funsym.tree, symtab, fname)
 	return gentab
 
 def check_stmt(tree, symtab, rettype):	
@@ -330,34 +335,38 @@ def check_rettype_binding(tree, rettype, symtab):
 							', '.join(str(t) for t in sorted(unbound)),
 							tree.children[1].tok.val))
 	
-def check_functionbinding(tree, globalsymtab):
+def check_functionbinding(tree, globalsymtab, fname):
+	if fname in symtabs:
+		return symtabs[fname] # to prevent infinite left-recursion
 	rettype = globalsymtab[tree.children[1].tok.val].type
-	symtab = create_argtable(tree.children[2], globalsymtab.copy())
-	check_rettype_binding(tree, rettype, symtab)
-	symtab = create_table(tree.children[3], symtab, False, True)
-	returned = check_stmts(tree.children[4], symtab, rettype)
+	symtabs[fname] = create_argtable(tree.children[2], globalsymtab.copy())
+	check_rettype_binding(tree, rettype, symtabs[fname])
+	symtabs[fname] = create_table(tree.children[3], symtabs[fname], False, True)
+	returned = check_stmts(tree.children[4], symtabs[fname], rettype)
 	if not returned and rettype.unify(Type('Void')) is None:
 		raise Exception("[Line {}:{}] Missing return statement "
 						"in a non-Void function"
 						.format(tree.children[1].tok.line,
 								tree.children[1].tok.col))
-	return symtab
 
-def check_localbinding(tree, globalsymtab, symtabs):
+def check_localbinding(tree, globalsymtab):
 	if not tree:
 		return
 	if tree.children[0].tok == 'FunDecl':
 		fname = tree.children[0].children[1].tok.val
-		symtabs[fname] = check_functionbinding(tree.children[0], globalsymtab)
+		check_functionbinding(tree.children[0], globalsymtab, fname)
 	elif tree.children[0].tok == 'VarDecl':
 		check_vardecl(tree.children[0], globalsymtab)
-	check_localbinding(tree.children[1], globalsymtab, symtabs)
+	check_localbinding(tree.children[1], globalsymtab)
+
+symtabs = None
 
 def check_binding(tree, globalsymtab=dict()):
-	globalsymtab.update(create_table(tree, dict(), True, False))
-	globalsymtab.update(create_table(tree, globalsymtab, True, True))
-	symtabs = dict()
-	symtabs['_global'] = globalsymtab
-	check_localbinding(tree, globalsymtab, symtabs)
+	global symtabs
+	symtabs = {k: None for k in globalsymtab} # assume predef. functions are ok
+	symtabs['_glob'] = dict(globalsymtab)
+	symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, False))
+	symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, True))
+	check_localbinding(tree, symtabs['_glob'])
 	print_symboltables(symtabs)
 	return symtabs
