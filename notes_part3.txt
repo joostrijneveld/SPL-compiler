@@ -1,0 +1,62 @@
+
+- lijsten en tuples zijn by reference want anders gaan dingen stuq
+- lijsten en tuples zitten niet op de stack want ze passen niet in 32 bit (dus pointer)
+- lijsten zitten in de heap als pointer+value (64bit)
+	- empty list is een nullpointer in de pointer van het laatste element
+		- als empty list de hele lijst is, is de laatste pointer dus op de stack
+- tuples zitten in de heap als 2 values || pointers
+
+isList t -> Bool
+isTuple t -> Bool
+
+alternatief waardoor alles supergaar en NP-hard wordt:
+compile functies voor alle types.
+
+
+[Int] a = 1 : 2 : [];
+[Int] b = 5 : a;
+a.tl = []; // b is nu kapot
+
+omdat : eigenlijk een soort 'functie' is die var a ook gewoon bij reference meekrijgt en dus een lijstje oplevert van value en pointer
+
+
+def equals(t x, t y) {
+	if isList(x) && iList(y)
+	{
+		return equals(x.tl, y.tl) && equals(x.hd, y.hd)		
+	}		
+}
+
+^^ hier heb je een typecast nodig :(
+
+twee opties:
+ - headers meegeven zodat je de shallow types weet bij equality
+ nadeel: je hebt nog steeds een typecast nodig ergens, om equals te implementeren (naast isList en isTuple die je uit headers kan afleiden). Dit kan segfaulten als je verkeerd typecast, en daar kunnen we static niks aan doen.
+ - equals in assembly. dit heeft recursiedingen die misschien aftelbaar zijn ipv F=4. statisch moet je dus alle types kunnen afleiden, anders weet je niet of dit uberhaupt kan.
+ 
+ Bool equals(t x, t y) {
+	pred isList(x) {
+		// in deze scope is x een list van generic s
+		return equals(x.tl, y.tl) && equals(x.hd, y.hd)		
+	}
+	// hier is x gewoon t
+}
+
+meerdere functies compilen voor generics (zodat je geen generics in je functieheaders meer hebt) kan wel, maar dan zijn het alleen een beetje veel functies als je veel argumenten hebt (hoi 4^100 met 100 argumenten).
+
+stack: voor values/args: 32bit header, 32bit pointer of value (pointer voor list/tuples, value voor bool/int)
+heap: linkedlists: 32bit header, 32bit pointer die doorwijst naar 't volgende element, 32bit value
+	tuples: 32bit value, 32bit header, zitten altijd onder elkaar op de heap
+
+ook ints en bools hebben dus headers nodig. headers zijn fijn.
+
+RR register is onnodig, want onze return values zijn 64bit incl headers
+MP register is onnodig, want we weten statisch hoeveel argumenten de functies hebben dus FP+x
+
+stel: alles by reference
++ headers kunnen in de pointers
++ je bent minder kwijt voor lists, tuples (alleen in de stack)
+- RAM gaat van 4GB naar 1GB
+- je assembly wordt ingewikkelder omdat je dan deepcopy moet doen op je ints om by value te werken
+= je bent net zoveel kwijt voor een int of bool
+dus teveel tegenargumenten, dus je wil  niet alles by reference
