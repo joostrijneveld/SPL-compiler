@@ -1,0 +1,12 @@
+[Int] inc([Int] x) {
+	if(isEmpty(x)) {
+		return [];
+	}
+	return (x.hd + 1) : inc(x.tl);
+}
+
+Void Main() {
+	[Int] x = 7: 8: [];
+	inc(x);
+	print(x.hd);
+}

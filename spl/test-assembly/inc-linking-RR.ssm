@@ -1,4 +1,4 @@
-; Inc ssm implementation using link/unlink and mark pointer
+; same as inc-linking, but we now use registers to return values
 ; Int x = 5
 ldc 2 			; This is an integer (boolean = 1, list = 3, tuple = 4?)
 sth 			; Data type at 0x7d0
@@ -12,9 +12,11 @@ bra main
 inc: 	
 	link 2 		; reserve space for the local x
 	ldml -3 2       ; get x from stack
-	stml 1 2        ; store x in local var
+	stml 1 2	; store x in local var
 	ldc 1
-	add             ; add 1 by the call value (5)
+	add 		; add 1 by the call value (5)
+	str R5
+	str RR	
 	unlink
 	ret
 
@@ -24,16 +26,10 @@ main:
 	ldml -2 2	; get location of x from stack
 	ldmh 0 2 	; retrieve value and data type of x from heap
 	bsr inc 	; call inc
-	
-	; return value of inc can be found at SP+4
-	; ssm expects that we use registers for this, so this is a hack
-	ldsa 4
-	str SP		; mov SP to get return values
-	stl 2
-	stl 1
-	ldsa -2		; put SP back to original position (SP-2)
-	str SP
-
+	ldr RR		; push data type of y on stack (result from inc)
+	stl 1		; put date type of in local var
+	ldr R5		; push value of y on stack (result from inc)
+	stl 2		; put value of y in local var	
 	ldl 2		; get y for print
 	trap 0 		; print y
 	unlink

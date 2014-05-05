@@ -1,0 +1,70 @@
+; goto main (last function in our assembly code)
+bra main
+
+; the function inc
+inc: 
+	link 2
+	ldl -2		; copy list pointer to local stack space
+	brf EndFunction ; branch if list is empty
+	
+	; retrieve and inc first element from heap
+	ldl -2
+	ldh 1		; retrieve first element
+	ldc 1
+	add
+	ldl -2
+	ldaa 1		; add 1 to heap pointer	
+	ldrr R6 HP	; back up old HP
+	str HP		; store heap pointer in register (is it allowed to overwrite HP?)
+	sth
+	ldrr HP R6
+
+	; push data on stack for next call	
+	ldc 3		
+	ldl -2		
+	ldh 2
+	bsr inc	
+	
+
+	EndFunction:
+	; store return values
+	ldc 3
+	str RR		; store list type
+	ldl -2
+	str R5		; store ptr
+		
+	unlink
+	ret
+
+main:
+	link 2
+	ldc 3		
+	stl 1		; store 3 on stack because x is list
+	
+	; allocate space on the heap for x
+	ldc 2		; first element is an int
+	sth		; returned ptr is ptr to list	
+	stl 2		; store ptr to first element
+	ldc 7		; value of first element
+	sth
+	ldc 2		; offset to second element on heap
+	add
+	sth		; pointer to second element
+	ldc 2		; second element is an int
+	sth
+	ldc 8		; value of second element
+	sth
+	ldc 0		; this is the last element, thus a 0-pointer
+	sth
+	
+	ldla 2 		; clean up the stack
+	str SP
+	
+	bsr inc
+	ldr RR
+	ldr R5
+
+	trap 0 		; print y
+	unlink
+
+; vim: set filetype=asm:
