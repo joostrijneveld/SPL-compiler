@@ -1,0 +1,12 @@
+Int x = 5;
+
+
+Int inc(Int n) {
+	return n + 1;
+}
+
+
+Void main() {
+	Int y = inc(x);
+	print(y);
+}
