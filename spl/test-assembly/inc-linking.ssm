@@ -8,20 +8,31 @@ sth 			; Actual value in heap at: 0x7d1
 bra main
 
 ; the function inc
-inc: 
-	ldms -2 2 	; copy argument to local stack space
+inc: 	
+	link 2 		; reserve space for the local x
+	ldml -3 2 	; copy argument to local stack space
 	ldc 1
 	add 		; add 1 by the call value (5)
-	ldsa -2 	; push pointer to return address on the stack
-	str SP 		; store return address in SP
+	stl 2
+	stl 1
+	unlink
 	ret
 
 main:
+	link 2		; reserve space for the local y
 	; to calculate y, we first need inc(x), thus retrieve x from heap
+	ldml -2 2	; get location of x from stack
 	ldmh 0 2 	; retrieve value and data type of x from heap
 	bsr inc 	; call inc
-	; return value of inc can be found at SP+3
-	ldms 2 2 	; push return value on top of stack to allocate y
+	; return value of inc can be found at SP+3, ssm expects that we use registers for this
+	ldsa 4
+	str SP		; mov SP to get return values
+	stl 2
+	stl 1
+	ldla 2		; put SP back to original position (MP+2)
+	str SP
+	ldl 2		; get y for print
 	trap 0 		; print y
+	unlink
 
 ; vim: set filetype=asm:
