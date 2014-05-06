@@ -50,8 +50,8 @@ heap: linkedlists: 32bit header, 32bit pointer die doorwijst naar 't volgende el
 
 ook ints en bools hebben dus headers nodig. headers zijn fijn.
 
-RR register is onnodig, want onze return values zijn 64bit incl headers
-MP register is onnodig, want we weten statisch hoeveel argumenten de functies hebben dus FP+x
+RR register is onnodig, want onze return values zijn 64bit incl headers <-- dit blijkt onhandig
+MP register is onnodig, want we weten statisch hoeveel argumenten de functies hebben dus FP+x <-- dit blijkt onzin
 
 stel: alles by reference
 + headers kunnen in de pointers
@@ -60,3 +60,14 @@ stel: alles by reference
 - je assembly wordt ingewikkelder omdat je dan deepcopy moet doen op je ints om by value te werken
 = je bent net zoveel kwijt voor een int of bool
 dus teveel tegenargumenten, dus je wil  niet alles by reference
+
+-------
+
+dingen tegenkomen bij ssm:
+ldh en ldmh laden vanaf value bovenop stack (dwz pointer) + offset, dus plan: zet altijd een pointer naar de onderkant van de heap op de stack (7d0) en gebruikt een offset die per global wordt opgeslagen
+
+registers voor je returnvalue? of op de stack? registers RR + R5 voor return is veel schoner qua code, scheelt een hoop gehack met de SP. Is wel iets langer, maar dat maakt niet echt uit. Bovendien een stuk makkelijker.
+
+dingen als expressies eerst evaluaten, zorgen dat het resultaat op de stack staat, en dan eventueel dingen gaan doen zoals assignment of return.
+
+argumenten altijd aan het begin van een functie naar locals copy-pasten, gewoon 'normale' manier, dus linken om ruimte te maken.
