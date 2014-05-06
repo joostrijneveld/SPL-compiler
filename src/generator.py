@@ -5,7 +5,7 @@ def generate_vardecl(tree, wab, tables):
 def generate_fundecl(tree, wab, tables):
 	pass
 
-def generate_decls(tree, wab, tables):
+def generate_decls(tree, wab, tables, vardecls = true):
 	if not tree:
 		return
 	if tree.children[0].tok == 'FunDecl':
@@ -14,7 +14,7 @@ def generate_decls(tree, wab, tables):
 		generate_vardecl(tree.children[0], wab, tables)
 	generate_decls(tree.children[1], wab, tables)
 	
-def generate_ssm(tree, tables, fname):
+def generate_ssm(tree, tables, fout):
 	wab = dict() # address book
 	generate_decls(tree, wab, tables)
 	

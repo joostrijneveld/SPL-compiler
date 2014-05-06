@@ -80,38 +80,37 @@ def complete_token(candidates, token, tokens, p):
 	else:
 		tokens.append(Token(p.line, p.eval_tokpos(), result, None))
 		
-def scan_spl(fname):
+def scan_spl(fin):
 	tokens = []
 	p = Position()
-	with open(fname, 'r') as f:
-		prevcandidates = candidates = list(TOKENTYPES)
-		prevtoken = token = ''
-		while True:
-			c = f.read(1)
-			p.col += 1
-			if not c:  # no more chars to read
-				if token:
-					complete_token(candidates, token, tokens, p)
-				break
-			elif not token and not c.strip():
-				p.eval_tokpos()
-				if c == '\n':
+	prevcandidates = candidates = list(TOKENTYPES)
+	prevtoken = token = ''
+	while True:
+		c = fin.read(1)
+		p.col += 1
+		if not c:  # no more chars to read
+			if token:
+				complete_token(candidates, token, tokens, p)
+			break
+		elif not token and not c.strip():
+			p.eval_tokpos()
+			if c == '\n':
+				p.nextline()
+			continue  # no token, and the next char is whitespace => skip!
+		token += c
+		if token in ['//', '/*']:
+			handle_comments(fin, token == '/*', p)
+			token = ''
+			candidates = list(TOKENTYPES)
+		else:
+			update_candidates(candidates, token)
+			if not candidates: # so if the current token is not valid
+				complete_token(prevcandidates, prevtoken, tokens, p)
+				if token[-1] == '\n':
 					p.nextline()
-				continue  # no token, and the next char is whitespace => skip!
-			token += c
-			if token in ['//', '/*']:
-				handle_comments(f, token == '/*', p)
-				token = ''
-				candidates = list(TOKENTYPES)
-			else:
-				update_candidates(candidates, token)
-				if not candidates: # so if the current token is not valid
-					complete_token(prevcandidates, prevtoken, tokens, p)
-					if token[-1] == '\n':
-						p.nextline()
-					token = token[-1].strip()  # start the next token with the invalidating character
-					candidates = list(TOKENTYPES) # and re-instantiate all candidates
-			# prepare for next iteration
-			prevtoken, prevcandidates = token, list(candidates)
+				token = token[-1].strip()  # start the next token with the invalidating character
+				candidates = list(TOKENTYPES) # and re-instantiate all candidates
+		# prepare for next iteration
+		prevtoken, prevcandidates = token, list(candidates)
 	return tokens
 	
