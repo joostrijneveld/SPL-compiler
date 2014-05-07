@@ -147,13 +147,13 @@ def type_op(fn, in_types, out_type, ops, tree, symtab):
 	return fn(tree, symtab)
 
 type_exp_hd = partial(type_op, type_id,
-	[Type([Type('t')])], Type('t'), '.hd')
+	[Type([Type('t')])], Type('t'), ['.hd'])
 type_exp_tl = partial(type_op, type_exp_hd,
-	[Type([Type('t')])], Type([Type('t')]), '.tl')
+	[Type([Type('t')])], Type([Type('t')]), ['.tl'])
 type_exp_fst = partial(type_op, type_exp_tl,
-	[Type((Type('a'),Type('b')))], Type('a'), '.fst')
+	[Type((Type('a'),Type('b')))], Type('a'), ['.fst'])
 type_exp_snd = partial(type_op, type_exp_fst,
-	[Type((Type('a'),Type('b')))], Type('b'), '.snd')
+	[Type((Type('a'),Type('b')))], Type('b'), ['.snd'])
 type_exp_field = type_exp_snd
 
 type_exp_unint = partial(type_op, type_exp_base,
