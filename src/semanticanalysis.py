@@ -162,19 +162,15 @@ type_exp_unbool = partial(type_op, type_exp_unint,
 	[Type('Bool')], Type('Bool'), ['!'])
 type_exp_con = partial(type_op, type_exp_unbool,
 	[Type('t'), Type([Type('t')])], Type([Type('t')]), [':'])
-type_exp_mult = partial(type_op, type_exp_con,
-	[Type('Int'), Type('Int')], Type('Int'), ['*', '/', '%'])
-type_exp_add = partial(type_op, type_exp_mult,
-	[Type('Int'), Type('Int')], Type('Int'), ['+', '-'])
-type_exp_cmp = partial(type_op, type_exp_add,
+type_exp_math = partial(type_op, type_exp_con,
+	[Type('Int'), Type('Int')], Type('Int'), ['+', '-', '*', '/', '%'])
+type_exp_cmp = partial(type_op, type_exp_math,
 	[Type('Int'), Type('Int')], Type('Bool'), ['<', '<=', '>', '>='])
 type_exp_eq = partial(type_op, type_exp_cmp,
 	[Type('t'), Type('t')], Type('Bool'), ['==','!='])
-type_exp_and = partial(type_op, type_exp_eq,
-	[Type('Bool'), Type('Bool')], Type('Bool'), ['&&'])
-type_exp_or = partial(type_op, type_exp_and,
-	[Type('Bool'), Type('Bool')], Type('Bool'), ['||'])
-type_exp = type_exp_or
+type_exp_andor = partial(type_op, type_exp_eq,
+	[Type('Bool'), Type('Bool')], Type('Bool'), ['&&', '||'])
+type_exp = type_exp_andor
 
 def type_expargs(tree, symtab):
 	''' expects a tree with an arg-node (',') as root '''
