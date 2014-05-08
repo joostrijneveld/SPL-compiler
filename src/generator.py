@@ -33,10 +33,13 @@ def gen_exp_op(tree, gwab, tables):
 		'<': 'lt', '<=': 'le', '>': 'gt', '>=': 'ge' }
 	for op in ops:
 		if tree.tok.type == op:
-			operands = (map(lambda x: gen_exp_op(x, gwab, tables), 
+			operands = [gen_exp_op(x, gwab, tables) for x in tree.children]
+			# operands = (map(lambda x: gen_exp_op(x, gwab, tables),
+				# tree.children)) 
 			# operands = (map(partial(gen_exp_op, gwab=gwab, tables=tables), 
-				tree.children))
+				# tree.children))
 			return reduce(lambda x, y: x + y, operands) + [op[tree.tok.type]]
+			# return [asm for operand in operands for asm in operand] + [op[tree.tok.type]]
 	return gen_exp_con(tree, gwab, tables)
 
 gen_exp = gen_exp_op	
