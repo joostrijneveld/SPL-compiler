@@ -1,0 +1,76 @@
+// [Int] x = 5 : 6 : 7 : [];
+// // [Int] y = x;
+
+// // Int a = ((5, 6)).snd;
+
+// Int y = x.hd;
+// [Int] z = x.tl;
+
+// ldc 2002
+// str HP
+// ldc 5
+// ldc 0
+// sth
+// ajs -1
+// sth
+// ldc 2000
+// sta 0
+
+// //head:
+// //gen_id
+// ldc 2000
+// ldh
+// ldh
+
+
+// tail:
+// ldc 2000
+// ldh
+// ldh -1
+
+Int main(Int z) {
+	Int a = 1;
+	Int b = 2;
+	Int c = 3;
+	return 7;
+}
+
+Int bar() {
+	return 5;
+}
+
+Int x = 4;
+Int y = bar();
+
+MP
+z
+?
+
+
+stla offset 
+
+/*
+// init x
+ldc 2002
+str HP
+ldc 5
+sth
+ajs -1
+
+ajs 2
+ldc 2000 //gen_exp
+ldh		//gen_exp
+ajs -2
+
+bsr main
+ldr RR
+ldc 2001 //vardecl y
+//..
+
+main:
+	link 1
+	ldla 1 //return
+	str RR //return
+	unlink
+	ret
+*/
