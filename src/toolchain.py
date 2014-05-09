@@ -26,9 +26,9 @@ def main():
 		'isEmpty': Symbol(0, 0, Type('Bool'), [Type([Type('t')])], True, None),
 		'print'  : Symbol(0, 0, Type('Void'), [Type('t')], True, None)
 	}
-	symtabs = semanticanalysis.check_binding(tree, predefined)
+	symtab = semanticanalysis.check_binding(tree, predefined)
 	with open(sys.argv[2], 'w') as fout:
-		generator.generate_ssm(tree, symtabs, fout)
+		generator.generate_ssm(tree, symtab, fout)
 	
 if __name__ == '__main__':
 	main()

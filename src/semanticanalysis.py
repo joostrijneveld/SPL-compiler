@@ -360,4 +360,4 @@ def check_binding(tree, globalsymtab=dict()):
 	symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, True))
 	check_uncalled_functions(tree, symtabs['_glob'])
 	print_symboltables(symtabs)
-	return symtabs
+	return symtabs['_glob']
