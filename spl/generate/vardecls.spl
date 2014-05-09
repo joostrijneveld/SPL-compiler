@@ -28,26 +28,50 @@
 // ldh
 // ldh -1
 
-Int main(Int z) {
-	Int a = 1;
-	Int b = 2;
-	Int c = 3;
-	return 7;
+// Int main(Int z) {
+// 	Int a = 5;
+// 	Int b = 6;
+// 	Int c = 7;
+// 	a = 1;
+// 	return x + a;
+// }
+
+// Int bar() {
+// 	return 5;
+// }
+
+Void foo() {
+	return;
 }
 
-Int bar() {
-	return 5;
+Int main() {
+	if (False) {
+		foo();
+		foo();
+		foo();
+		foo();
+		foo();
+		foo();
+		foo();
+		foo();
+		foo();
+		return 1;
+	}
+	else {
+		return 2;
+	}
 }
 
 Int x = 4;
-Int y = bar();
+Int y = main();
 
-MP
-z
-?
+// MP
+// z 1
+// a 2  = wab[1][a]
+// b 3 
+// c 4
 
-
-stla offset 
+// stla offset 
 
 /*
 // init x

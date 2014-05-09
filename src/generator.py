@@ -14,10 +14,12 @@ def gen_args(tree, wab, tables):
 def gen_funcall(tree, wab, tables):
 	return (['ajs 2'] +
 		gen_args(tree.children[1], wab, tables) +
-		['ajs -2', 'bsr ' + tree.children[0].tok.val])
+		['ajs '+str(-len(tables[tree.children[0].tok.val].argtypes)-2),
+		 'bsr ' + tree.children[0].tok.val])
 	
 def gen_exp_id(tree, wab, tables):
-	# global only
+	if tree.tok.val in wab[1]:
+		return ['ldl ' + str(wab[1][tree.tok.val])]
 	return ['ldc ' + str(HEAPBASE + wab[0][tree.tok.val]), 'ldh 0']
 
 def gen_exp_base(tree, wab, tables):
@@ -28,7 +30,7 @@ def gen_exp_base(tree, wab, tables):
 	elif tree.tok.type == '[]':
 		return ['ldc 0']
 	elif tree.tok.type == 'FunCall':
-		rettype = tables['_glob'][tree.children[0].tok.val].type
+		rettype = tables[tree.children[0].tok.val].type
 		result = gen_funcall(tree, wab, tables)
 		if rettype != Type('Void'): # TODO test
 			result += ['ldr RR']
@@ -57,20 +59,35 @@ def gen_exp_op(tree, wab, tables):
 
 gen_exp = gen_exp_op
 
+def count_bytes(asms):
+	return sum([x.strip().count(' ') + 1 for x in asms])
+	
 def gen_stmt(tree, wab, tables):
-	print tree.tok.type
 	if tree.tok.type == 'Scope':
 		return gen_stmts(tree.children[0], wab, tables)
 	elif tree.tok.type == 'FunCall':
 		return gen_funcall(tree, wab, tables)
-	elif tree.tok.type == 'if' or tree.tok.type == 'while':
+	elif tree.tok.type == 'if':
+		condition = gen_exp(tree.children[0], wab, tables)
+		ifstmts = gen_stmt(tree.children[1], wab, tables)
+		elsestmts = []
+		if tree.children[2]:
+			elsestmts = gen_stmt(tree.children[2], wab, tables)
+		branch = ['brf ' + str(count_bytes(ifstmts))]
+		return condition + branch + ifstmts + elsestmts
+	elif tree.tok.type == 'while':
 		return []
 	elif tree.tok.type == '=':
-		return []
+		result = gen_exp(tree.children[1], wab, tables)
+		localvar = tree.children[0].tok.val
+		if tree.children[0].tok.val in wab[1]:
+			return result + ['stl '+str(wab[1][localvar])]
+		return result + ['ldc ' + str(HEAPBASE + wab[0][localvar]), 'sta 0']
 	elif tree.tok.type == 'return':
+		ret = ['unlink', 'ret']
 		if not tree.children[0]:
-			return ['unlink', 'ret']
-		return gen_exp(tree.children[0], wab, tables) + ['str RR', 'unlink', 'ret']
+			return ret
+		return gen_exp(tree.children[0], wab, tables) + ['str RR'] + ret
 
 # elif tree.tok.type == 'if' or tree.tok.type == 'while':
 	# 	condition = type_exp(tree.children[0], symtab)
@@ -83,15 +100,6 @@ def gen_stmt(tree, wab, tables):
 	# 	if tree.tok.type == 'if' and tree.children[2]: # for 'else'-clause
 	# 		returned = check_stmt(tree.children[2], symtab, rettype)
 	# 	return check_stmt(tree.children[1], symtab, rettype) and returned
-	# elif tree.tok.type == '=':
-	# 	fieldtype = type_exp_field(tree.children[0], symtab)
-	# 	exptype = type_exp(tree.children[1], symtab)
-	# 	if fieldtype.unify(exptype) is None:
-	# 		raise Exception("[Line {}:{}] Invalid assignment for id {}\n"
-	# 						"  Expected expression of type: {}\n"
-	# 						"  But got value of type: {}"
-	# 						.format(tree.tok.line, tree.tok.col,
-	# 							tree.children[0].tok.val, fieldtype, exptype))
 
 def gen_stmts(tree, wab, tables):
 	if not tree:
@@ -101,14 +109,16 @@ def gen_stmts(tree, wab, tables):
 
 def address_args(tree, wab):
 	if tree:
-		wab[1][tree.children[1].tok.val] = len(wab[1])
+		wab[1][tree.children[1].tok.val] = len(wab[1]) + 1
 		address_args(tree.children[2], wab)
 		
 def gen_locals(tree, wab, tables):
 	if not tree:
 		return []
-	wab[1][tree.children[0].children[1].tok.val] = len(wab[1])
+	localvar = tree.children[0].children[1].tok.val
+	wab[1][localvar] = len(wab[1]) + 1
 	return (gen_exp(tree.children[0].children[2], wab, tables) +
+		['stl '+str(wab[1][localvar])] +
 		gen_locals(tree.children[1], wab, tables))
 	# TODO: actually store the gen_exp
 	
@@ -125,7 +135,8 @@ def gen_fundecl(tree, wab, tables):
 	wab[1] = dict()
 	address_args(tree.children[2], wab)
 	result = [tree.children[1].tok.val+':']
-	numlocals = depth(tree.children[2], 2) + depth(tree.children[3], 1)
+	numargs = len(tables[tree.children[1].tok.val].argtypes)
+	numlocals = numargs + depth(tree.children[3], 1)
 	result += ['link '+str(numlocals)]
 	result += gen_locals(tree.children[3], wab, tables)
 	result += gen_stmts(tree.children[4], wab, tables)
