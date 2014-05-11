@@ -32,7 +32,7 @@ def gen_exp_base(tree, wab, tables):
 	elif tree.tok.type == 'FunCall':
 		rettype = tables[tree.children[0].tok.val].type
 		result = gen_funcall(tree, wab, tables)
-		if rettype != Type('Void'): # TODO test
+		if rettype != Type('Void'):
 			result += ['ldr RR']
 		return result
 	elif tree.tok.type == ',':
@@ -73,13 +73,14 @@ def gen_stmt(tree, wab, tables):
 		elsestmts = []
 		if tree.children[2]:
 			elsestmts = gen_stmt(tree.children[2], wab, tables)
+			ifstmts += ['bra ' + str(count_bytes(elsestmts))]
 		branch = ['brf ' + str(count_bytes(ifstmts))]
 		return condition + branch + ifstmts + elsestmts
 	elif tree.tok.type == 'while':
 		condition = gen_exp(tree.children[0], wab, tables)
 		stmts = gen_stmt(tree.children[1], wab, tables)
 		branch = ['brf ' + str(count_bytes(stmts) + 2)] # +2 to jump over bra x
-                endbranch = ['bra -' + str(count_bytes(condition + branch + stmts) + 2)]
+		endbranch = ['bra -' + str(count_bytes(condition + branch + stmts) + 2)]
 		return condition + branch + stmts + endbranch
 	elif tree.tok.type == '=':
 		result = gen_exp(tree.children[1], wab, tables)
@@ -92,18 +93,6 @@ def gen_stmt(tree, wab, tables):
 		if not tree.children[0]:
 			return ret
 		return gen_exp(tree.children[0], wab, tables) + ['str RR'] + ret
-
-# elif tree.tok.type == 'if' or tree.tok.type == 'while':
-	# 	condition = type_exp(tree.children[0], symtab)
-	# 	if condition.unify(Type('Bool')) is None:
-	# 		raise Exception("[Line {}:{}] Incompatible condition type\n"
-	# 						"  Expected expression of type: Bool\n"
-	# 						"  But got value of type: {}"
-	# 						.format(tree.tok.line, tree.tok.col, condition))
-	# 	returned = False
-	# 	if tree.tok.type == 'if' and tree.children[2]: # for 'else'-clause
-	# 		returned = check_stmt(tree.children[2], symtab, rettype)
-	# 	return check_stmt(tree.children[1], symtab, rettype) and returned
 
 def gen_stmts(tree, wab, tables):
 	if not tree:
@@ -124,7 +113,6 @@ def gen_locals(tree, wab, tables):
 	return (gen_exp(tree.children[0].children[2], wab, tables) +
 		['stl '+str(wab[1][localvar])] +
 		gen_locals(tree.children[1], wab, tables))
-	# TODO: actually store the gen_exp
 	
 def depth(tree, index):
 	if not tree:
