@@ -76,7 +76,11 @@ def gen_stmt(tree, wab, tables):
 		branch = ['brf ' + str(count_bytes(ifstmts))]
 		return condition + branch + ifstmts + elsestmts
 	elif tree.tok.type == 'while':
-		return []
+		condition = gen_exp(tree.children[0], wab, tables)
+		stmts = gen_stmt(tree.children[1], wab, tables)
+		branch = ['brf ' + str(count_bytes(stmts) + 2)] # +2 to jump over bra x
+                endbranch = ['bra -' + str(count_bytes(condition + branch + stmts) + 2)]
+		return condition + branch + stmts + endbranch
 	elif tree.tok.type == '=':
 		result = gen_exp(tree.children[1], wab, tables)
 		localvar = tree.children[0].tok.val
