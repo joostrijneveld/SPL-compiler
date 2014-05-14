@@ -12,11 +12,13 @@ def gen_args(tree, wab, tables):
 		gen_args(tree.children[1], wab, tables))
 
 def gen_funcall(tree, wab, tables):
-	return (['ajs 2'] +
-		gen_args(tree.children[1], wab, tables) +
-		['ajs '+str(-len(tables[tree.children[0].tok.val].argtypes)-2),
-		 'bsr ' + tree.children[0].tok.val])
-	
+	if tree.children[1]:
+		return (['ajs 2'] +
+			gen_args(tree.children[1], wab, tables) +
+			['ajs '+str(-len(tables[tree.children[0].tok.val].argtypes)-2),
+			 'bsr ' + tree.children[0].tok.val])
+	return ['bsr ' + tree.children[0].tok.val]
+		
 def gen_exp_id(tree, wab, tables):
 	if tree.tok.val in wab[1]:
 		return ['ldl ' + str(wab[1][tree.tok.val])]
@@ -42,13 +44,13 @@ def gen_exp_base(tree, wab, tables):
 	return gen_exp_id(tree, wab, tables)
 
 def gen_exp_op(tree, wab, tables):
-	unops = {'!': ['not'], '-': ['neg']}
+	unops = {'!': ['not'], '-': ['neg'],
+		'.hd': ['ldh 0'], '.tl': ['ldh -1'],
+		'.fst': ['ldh 0'], '.snd': ['ldh -1']}
 	ops = {':': ['sth', 'ajs -1', 'sth'],
 		'*': ['mul'], '%': ['mod'], '/': ['div'], '+': ['add'], '-': ['sub'],
 		'&&': ['and'], '||': ['or'], '==': ['eq'], '!=': ['ne'],
-		'<': ['lt'], '<=': ['le'], '>': ['gt'], '>=': ['ge'],
-		'.hd': ['ldh 0'], '.tl': ['ldh -1'],
-		'.fst': ['ldh 0'], '.snd': ['ldh -1']}
+		'<': ['lt'], '<=': ['le'], '>': ['gt'], '>=': ['ge']}
 	if tree.tok.type in ops or tree.tok.type in unops:
 		operands = [gen_exp(x, wab, tables) for x in tree.children]
 		if len(operands) == 1:
@@ -152,7 +154,9 @@ def generate_ssm(tree, tables, fout):
 	asm = (gen_decls(tree, wab, tables, True, True) +
 		['ldc '+ str(HEAPBASE + len(wab[0])), 'str HP'] +
 		gen_decls(tree, wab, tables, True) + ['halt'] + 
-		gen_decls(tree, wab, tables, False))
+		gen_decls(tree, wab, tables, False) +
+		['print:', 'trap 0'] +
+		['isEmpty:', 'ldc 0', 'eq'])
 	for x in asm:
 		fout.write(x+'\n')
 	print wab
