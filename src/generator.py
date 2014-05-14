@@ -61,14 +61,6 @@ def gen_exp_op(tree, wab, tables):
 
 gen_exp = gen_exp_op
 
-def gen_field_assignment(tree, wab, tables):
-	offset = -int(tree.tok.type in ['.snd', '.tl'])
-	if tree.children[0].tok.type == 'id':
-		if tree.children[0].tok.val in wab[1]:
-			return ['ldl '+str(wab[1][tree.children[0].tok.val])] + ['ldh '+str(offset)]
-		return ['ldc ' + str(HEAPBASE + wab[0][tree.children[0].tok.val])] + ['ldh '+str(offset)]
-	return gen_field_assignment(tree.children[0], wab, tables) + ['ldh '+str(offset)]
-	
 def count_bytes(asms):
 	return sum([x.strip().count(' ') + 1 for x in asms])
 
@@ -94,15 +86,9 @@ def gen_stmt(tree, wab, tables):
 		return condition + branch + stmts + endbranch
 	elif tree.tok.type == '=':
 		result = gen_exp(tree.children[1], wab, tables)
-		if tree.children[0].tok.type == 'id':
-			localvar = tree.children[0].tok.val
-			if tree.children[0].tok.val in wab[1]:
-				return result + ['stl '+str(wab[1][localvar])]
-			return result + ['ldc ' + str(HEAPBASE + wab[0][localvar]), 'sta 0']
-		else:
-			result += gen_field_assignment(tree.children[0], wab, tables)
-			result[-1] = result[-1].replace('ldh', 'sta')
-			return result
+		result += gen_exp(tree.children[0], wab, tables)
+		result[-1] = result[-1].replace('ldh', 'sta').replace('ldl', 'stl')
+		return result
 	elif tree.tok.type == 'return':
 		ret = ['unlink', 'ret']
 		if not tree.children[0]:
