@@ -154,8 +154,8 @@ def generate_ssm(tree, tables, fout):
 		['ldc '+ str(HEAPBASE + len(wab[0])), 'str HP'] +
 		gen_decls(tree, wab, tables, True) + ['halt'] + 
 		gen_decls(tree, wab, tables, False) +
-		['print:', 'trap 0'] +
-		['isEmpty:', 'ldc 0', 'eq'])
+		['print:', 'link 1', 'ldl 1', 'trap 0', 'unlink', 'ret'] +
+		['isEmpty:', 'link 1', 'ldl 1', 'ldc 0', 'eq', 'str RR', 'unlink', 'ret'])
 	for x in asm:
 		fout.write(x+'\n')
 	print wab
