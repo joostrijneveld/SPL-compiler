@@ -132,8 +132,6 @@ def gen_fundecl(tree, wab, tables):
 	result += ['link '+str(numlocals)]
 	result += gen_locals(tree.children[3], wab, tables)
 	result += gen_stmts(tree.children[4], wab, tables)
-	if result[-1] != 'ret':
-		result += ['unlink', 'ret']
 	return result
 	
 def gen_decls(tree, wab, tables, vardecls, reserve=False):

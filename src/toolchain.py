@@ -21,12 +21,12 @@ def main():
 		tokens = scanner.scan_spl(fin)
 	tree = parser.build_tree(tokens)
 	print str(tree)
-	# prettyprinter.print_tree(tree)
 	predefined = {
 		'isEmpty': Symbol(0, 0, Type('Bool'), [Type([Type('t')])], True, None),
 		'print'  : Symbol(0, 0, Type('Void'), [Type('t')], True, None)
 	}
 	symtab = semanticanalysis.check_binding(tree, predefined)
+	prettyprinter.print_tree(tree)
 	with open(sys.argv[2], 'w') as fout:
 		generator.generate_ssm(tree, symtab, fout)
 	

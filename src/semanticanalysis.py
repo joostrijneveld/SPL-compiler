@@ -3,6 +3,8 @@
 import sys
 from collections import namedtuple
 from functools import partial
+from scanner import Token  # required to add explicit return to Voids in AST
+from parser import Node
 
 Symbol = namedtuple('Symbol',
 	['line', 'col', 'type', 'argtypes', 'glob', 'tree'])
@@ -281,15 +283,19 @@ def check_stmt(tree, symtab, rettype):
 								rettype, exptype))
 		return True
 	
-def check_stmts(tree, symboltable, rettype):
+def check_stmts(tree, symtab, rettype, outerscope=False):
 	if tree:
-		returned = check_stmt(tree.children[0], symboltable, rettype)
+		returned = check_stmt(tree.children[0], symtab, rettype)
 		if returned and tree.children[1] is not None:
 			raise Exception("[Line {}:{}] Unreachable code detected\n"
 							"  If this is intentional, enclose it in comments"
 							.format(tree.children[1].children[0].tok.line,
 								tree.children[1].children[0].tok.col))
-		return returned or check_stmts(tree.children[1], symboltable, rettype)
+		if all([not returned, not tree.children[1],
+			outerscope, rettype.unify(Type('Void'))]):
+			returnnode = Node(Token(0, 0, 'return', None), None)
+			tree.children[1] = Node(';', returnnode, None)
+		return returned or check_stmts(tree.children[1], symtab, rettype, outerscope)
 
 def check_vardecl(tree, symtab):
 	vartype = Type.from_node(tree.children[0])
@@ -335,7 +341,7 @@ def check_functionbinding(tree, globalsymtab, fname):
 	symtabs[fname] = create_argtable(tree.children[2], globalsymtab.copy())
 	check_rettype_binding(tree, rettype, symtabs[fname])
 	symtabs[fname] = create_table(tree.children[3], symtabs[fname], False, True)
-	returned = check_stmts(tree.children[4], symtabs[fname], rettype)
+	returned = check_stmts(tree.children[4], symtabs[fname], rettype, True)
 	if not returned and rettype.unify(Type('Void')) is None:
 		raise Exception("[Line {}:{}] Missing return statement "
 						"in a non-Void function"

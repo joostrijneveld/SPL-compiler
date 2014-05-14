@@ -7,7 +7,7 @@ from scanner import Token
 class Node:
 	def __init__(self, tok, *children):
 		self.tok = tok
-		self.children = children
+		self.children = list(children)
 		
 	def __repr__(self, depth = 0):
 		ret = "\t"*depth+repr(self.tok)+"\n"
