@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
-import re, collections
+import re
+import collections
 
 LITERALS = [
     'True', 'False',
@@ -10,25 +11,28 @@ LITERALS = [
     ',', ';', '{', '}', '[', ']', '(', ')', '=',
     '.hd', '.tl', '.fst', '.snd']
 
-TOKENTYPES = ['id','int'] + LITERALS
+TOKENTYPES = ['id', 'int'] + LITERALS
 
-class Token(collections.namedtuple('TokenBase', ['line','col','type','val'])):
+
+class Token(collections.namedtuple('TokenBase', ['line', 'col', 'type', 'val'])):
     def __repr__(self):
         return (self.type + ('['+str(self.val)+']')*(self.val is not None) +
-                ' ['+ str(self.line) + ':' + str(self.col)+']')
+                ' [' + str(self.line) + ':' + str(self.col) + ']')
+
 
 class Position:
     def __init__(self):
         self.line = self.col = self.prevcol = 1
-    
+
     def nextline(self):
-        self.prevcol = self.col =  1
+        self.prevcol = self.col = 1
         self.line += 1
-    
+
     def eval_tokpos(self):
         result, self.prevcol = self.prevcol, self.col
         return result
-        
+
+
 def handle_comments(f, blockcomment, p):
     if blockcomment:
         last_two = collections.deque(maxlen=2)
@@ -41,10 +45,11 @@ def handle_comments(f, blockcomment, p):
                 p.nextline()
             last_two.append(c)
             # if ''.join(last_two) == '/*': # nested comments
-                # handle_comments(f, True, p)
+            #     handle_comments(f, True, p)
     else:
         f.readline()
         p.nextline()
+
 
 def update_candidates(candidates, token):
     for t in list(candidates):
@@ -57,7 +62,8 @@ def update_candidates(candidates, token):
         else:
             if not t.startswith(token):
                 candidates.remove(t)
-                
+
+
 def complete_token(candidates, token, tokens, p):
     if len(candidates) == 1:
         result = candidates[0]
@@ -75,11 +81,12 @@ def complete_token(candidates, token, tokens, p):
         tokens.append(Token(p.line, p.eval_tokpos(), result, token))
     elif result == 'int':
         tokens.append(Token(p.line, p.eval_tokpos(), result, int(token)))
-    elif result in ['True', 'False']: #exceptional case for booleans
+    elif result in ['True', 'False']:  # exceptional case for booleans
         tokens.append(Token(p.line, p.eval_tokpos(), 'bool', result == 'True'))
     else:
         tokens.append(Token(p.line, p.eval_tokpos(), result, None))
-        
+
+
 def scan_spl(fin):
     tokens = []
     p = Position()
@@ -104,13 +111,13 @@ def scan_spl(fin):
             candidates = list(TOKENTYPES)
         else:
             update_candidates(candidates, token)
-            if not candidates: # so if the current token is not valid
+            if not candidates:  # so if the current token is not valid
                 complete_token(prevcandidates, prevtoken, tokens, p)
                 if token[-1] == '\n':
                     p.nextline()
-                token = token[-1].strip()  # start the next token with the invalidating character
-                candidates = list(TOKENTYPES) # and re-instantiate all candidates
+                # start next token with invalidating character
+                token = token[-1].strip()
+                candidates = list(TOKENTYPES)  # re-instantiate all candidates
         # prepare for next iteration
         prevtoken, prevcandidates = token, list(candidates)
     return tokens
-    

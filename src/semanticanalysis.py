@@ -52,6 +52,7 @@ class Type:
             return self
         return None
 
+
 def print_symboltables(symtabs):
     def print_symboltable((fname, symboltable)):
         if not symboltable:
@@ -67,11 +68,13 @@ def print_symboltables(symtabs):
         print '='*62
     map(print_symboltable, symtabs.iteritems())
 
+
 def find_argtypes(tree):
     ''' expects a tree with an arg-node (',') as root '''
     if not tree:
         return []
     return [Type.from_node(tree.children[0])] + find_argtypes(tree.children[2])
+
 
 def update_symtab(symtab, tok, t, argtypes, glob, tree=None):
     if tok.val in symtab:
@@ -88,6 +91,7 @@ def update_symtab(symtab, tok, t, argtypes, glob, tree=None):
                                 tok.val, oldsym.line, oldsym.col))
     symtab.update({tok.val: Symbol(tok.line, tok.col, t, argtypes, glob, tree)})
 
+
 def create_table(tree, symtab, glob, vardecls):
     ''' expects a tree with a Decl-node as root '''
     if not tree:
@@ -102,6 +106,7 @@ def create_table(tree, symtab, glob, vardecls):
         update_symtab(symtab, sym, t, None, glob)
     return create_table(tree.children[1], symtab, glob, vardecls)
 
+
 def create_argtable(tree, symtab):
     ''' expects a tree with an arg-node (',') as root '''
     if not tree:
@@ -111,11 +116,13 @@ def create_argtable(tree, symtab):
     update_symtab(symtab, sym, t, None, False)
     return create_argtable(tree.children[2], symtab)
 
+
 def type_id(tree, symtab):
     if tree.tok.val not in symtab:
         raise Exception("[Line {}:{}] Found id {}, but it has not been defined"
                 .format(tree.tok.line, tree.tok.col, tree.tok.val))
     return symtab[tree.tok.val].type
+
 
 def type_exp_base(tree, symtab):
     if tree.tok.type == 'int':
@@ -133,6 +140,7 @@ def type_exp_base(tree, symtab):
             type_exp(tree.children[1], symtab)))
     else:
         return type_exp_field(tree,symtab)
+
 
 def type_op(fn, in_types, out_type, ops, tree, symtab):
     if tree.tok.type in ops:
@@ -174,6 +182,7 @@ type_exp_andor = partial(type_op, type_exp_eq,
     [Type('Bool'), Type('Bool')], Type('Bool'), ['&&', '||'])
 type_exp = type_exp_andor
 
+
 def type_expargs(tree, symtab):
     ''' expects a tree with an arg-node (',') as root '''
     if not tree:
@@ -181,8 +190,10 @@ def type_expargs(tree, symtab):
     return ([type_exp(tree.children[0], symtab)]
             + type_expargs(tree.children[1], symtab))
 
+
 def type_expfunc(tree, symtab):
     return type_id(tree.children[0], symtab)
+
 
 def apply_gentab(tree, t, gentab):
     '''replaces generics that occur in t with their literal type from gentab'''
@@ -195,6 +206,7 @@ def apply_gentab(tree, t, gentab):
                 apply_gentab(tree, t.value[1], gentab)))
     if type(t.value) is list:
         return Type([apply_gentab(tree, t.value[0], gentab)])
+
 
 def apply_generics(gen_type, lit_type, gentab):
     ''' checks if gen_type can be applied to lit_type, updates gentab '''
@@ -215,6 +227,7 @@ def apply_generics(gen_type, lit_type, gentab):
     if type(gen_type.value) is list and type(lit_type.value) is list:
         return apply_generics(gen_type.value[0], lit_type.value[0], gentab)
     return False
+
 
 def check_funcall(tree, symtab):
     fname = tree.children[0].tok.val
@@ -242,6 +255,7 @@ def check_funcall(tree, symtab):
                             ', '.join(map(str, received))))
     check_functionbinding(funsym.tree, symtab, fname)
     return gentab
+
 
 def check_stmt(tree, symtab, rettype):    
     ''' expects a tree with a statement node as root '''
@@ -283,6 +297,7 @@ def check_stmt(tree, symtab, rettype):
                                 rettype, exptype))
         return True
     
+
 def check_stmts(tree, symtab, rettype, outerscope=False):
     if tree:
         returned = check_stmt(tree.children[0], symtab, rettype)
@@ -297,6 +312,7 @@ def check_stmts(tree, symtab, rettype, outerscope=False):
             tree.children[1] = Node(';', returnnode, None)
         return returned or check_stmts(tree.children[1], symtab, rettype, outerscope)
 
+
 def check_vardecl(tree, symtab):
     vartype = Type.from_node(tree.children[0])
     exptype = type_exp(tree.children[2], symtab)
@@ -308,6 +324,7 @@ def check_vardecl(tree, symtab):
                             tree.children[1].tok.col, tree.children[1].tok.val,
                             vartype, exptype))
 
+
 def list_generics(t):
     if t.value in ['Int', 'Bool', 'Void']:
         return set()
@@ -317,6 +334,7 @@ def list_generics(t):
         return list_generics(t.value[0]) | list_generics(t.value[1])
     if type(t.value) is list:
         return list_generics(t.value[0])
+
 
 def check_rettype_binding(tree, rettype, symtab):
     '''checks if all generics that occur in rettype are bound by the symtab'''
@@ -334,6 +352,7 @@ def check_rettype_binding(tree, rettype, symtab):
                             ', '.join(str(t) for t in sorted(unbound)),
                             tree.children[1].tok.val))
     
+
 def check_functionbinding(tree, globalsymtab, fname):
     if fname in symtabs:
         return symtabs[fname] # to prevent infinite left-recursion via funcall
@@ -348,6 +367,7 @@ def check_functionbinding(tree, globalsymtab, fname):
                         .format(tree.children[1].tok.line,
                                 tree.children[1].tok.col))
 
+
 def check_uncalled_functions(tree, globalsymtab):
     if not tree:
         return
@@ -357,6 +377,7 @@ def check_uncalled_functions(tree, globalsymtab):
     check_uncalled_functions(tree.children[1], globalsymtab)
 
 symtabs = None
+
 
 def check_binding(tree, globalsymtab=dict()):
     global symtabs
