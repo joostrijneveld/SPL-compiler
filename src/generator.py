@@ -2,6 +2,7 @@
 
 from semanticanalysis import Type
 from functools import partial
+from itertools import chain
 
 HEAPBASE = 2000 # 7d0, initial value of HP
 
@@ -54,9 +55,9 @@ def gen_exp_op(tree, wab, tables):
 	if tree.tok.type in ops or tree.tok.type in unops:
 		operands = [gen_exp(x, wab, tables) for x in tree.children]
 		if len(operands) == 1:
-			return reduce(lambda x, y: x + y, operands) + unops[tree.tok.type]
+			return sum(operands, []) + unops[tree.tok.type]
 		else:
-			return reduce(lambda x, y: x + y, operands) + ops[tree.tok.type]
+			return sum(operands, []) + ops[tree.tok.type]
 	return gen_exp_base(tree, wab, tables)
 
 gen_exp = gen_exp_op
@@ -115,10 +116,10 @@ def gen_locals(tree, wab, tables):
 		['stl '+str(wab[1][localvar])] +
 		gen_locals(tree.children[1], wab, tables))
 	
-def depth(tree, index):
+def count_locals(tree):
 	if not tree:
 		return 0
-	return 1 + depth(tree.children[index], index)
+	return 1 + count_locals(tree.children[1])
 
 def gen_vardecl(tree, wab, tables):
 	return (gen_exp(tree.children[2], wab, tables) +
@@ -129,7 +130,7 @@ def gen_fundecl(tree, wab, tables):
 	address_args(tree.children[2], wab)
 	result = [tree.children[1].tok.val+':']
 	numargs = len(tables[tree.children[1].tok.val].argtypes)
-	numlocals = numargs + depth(tree.children[3], 1)
+	numlocals = numargs + count_locals(tree.children[3])
 	result += ['link '+str(numlocals)]
 	result += gen_locals(tree.children[3], wab, tables)
 	result += gen_stmts(tree.children[4], wab, tables)
