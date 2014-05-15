@@ -49,7 +49,7 @@ def gen_exp_base(tree, wab, tables):
     return gen_exp_id(tree, wab, tables)
 
 
-def gen_exp_op(tree, wab, tables):
+def gen_exp(tree, wab, tables):
     unops = {'!': ['not'], '-': ['neg'],
              '.hd': ['ldh 0'], '.tl': ['ldh -1'],
              '.fst': ['ldh 0'], '.snd': ['ldh -1']}
@@ -64,9 +64,6 @@ def gen_exp_op(tree, wab, tables):
         else:
             return sum(operands, []) + ops[tree.tok.type]
     return gen_exp_base(tree, wab, tables)
-
-
-gen_exp = gen_exp_op
 
 
 def count_bytes(asms):
