@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import re
-import collections
+from collections import namedtuple, deque
 
 LITERALS = [
     'True', 'False',
@@ -14,7 +14,7 @@ LITERALS = [
 TOKENTYPES = ['id', 'int'] + LITERALS
 
 
-class Token(collections.namedtuple('TokenBase', ['line', 'col', 'type', 'val'])):
+class Token(namedtuple('TokenBase', ['line', 'col', 'type', 'val'])):
     def __repr__(self):
         return (self.type + ('['+str(self.val)+']')*(self.val is not None) +
                 ' [' + str(self.line) + ':' + str(self.col) + ']')
@@ -35,7 +35,7 @@ class Position:
 
 def handle_comments(f, blockcomment, p):
     if blockcomment:
-        last_two = collections.deque(maxlen=2)
+        last_two = deque(maxlen=2)
         while ''.join(last_two) != '*/':
             c = f.read(1)
             if not c:

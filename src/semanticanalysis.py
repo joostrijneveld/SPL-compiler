@@ -7,27 +7,28 @@ from scanner import Token  # required to add explicit return to Voids in AST
 from parser import Node
 
 Symbol = namedtuple('Symbol',
-    ['line', 'col', 'type', 'argtypes', 'glob', 'tree'])
+                    ['line', 'col', 'type', 'argtypes', 'glob', 'tree'])
+
 
 class Type:
     def __init__(self, value):
         self.value = value
-    
+
     @staticmethod
-    def from_node(tree): # tree is a Type-node
+    def from_node(tree):  # tree is a Type-node
         if tree.tok.type in ['Bool', 'Int', 'Void']:
             return Type(tree.tok.type)
         elif tree.tok.type == 'id':
             return Type(tree.tok.val)
         elif tree.tok.type == ',':
             return Type((Type.from_node(tree.children[0]),
-                    Type.from_node(tree.children[1])))
+                        Type.from_node(tree.children[1])))
         elif tree.tok.type == '[':
             return Type([Type.from_node(tree.children[0])])
 
     def __repr__(self):
         return repr(self.value)
-    
+
     def unify(self, other):
         ''' attempts to unify non-generic types (necessary for empty lists)
             return value None means no unification could be found '''
@@ -58,13 +59,13 @@ def print_symboltables(symtabs):
         if not symboltable:
             return
         print "{:=^62}".format(" {} ".format(fname))
-        print ("{0: <12} {1: <15} {2: <15} {3: <20}"
-                .format('Position', 'Name', 'Type', 'Argtypes'))
+        print("{0: <12} {1: <15} {2: <15} {3: <20}"
+              .format('Position', 'Name', 'Type', 'Argtypes'))
         print '-'*62
         for k, v in symboltable.iteritems():
-            argvstring =  ", ".join(map(str, v.argtypes)) if v.argtypes != None else None
-            print ("{: <12} {: <15} {: <15} {: <20}"
-                    .format("{0.line}:{0.col}".format(v), k, v.type, argvstring))
+            argvstring = ", ".join(map(str, v.argtypes)) if v.argtypes is not None else None
+            print("{: <12} {: <15} {: <15} {: <20}"
+                  .format("{0.line}:{0.col}".format(v), k, v.type, argvstring))
         print '='*62
     map(print_symboltable, symtabs.iteritems())
 
@@ -81,14 +82,14 @@ def update_symtab(symtab, tok, t, argtypes, glob, tree=None):
         oldsym = symtab[tok.val]
         if oldsym.glob and not glob:
             sys.stderr.write("[Line {}:{}] Warning: redefinition of global {}\n"
-                            "[Line {}:{}] Previous definition was here\n"
-                            .format(tok.line, tok.col, tok.val,
-                                oldsym.line, oldsym.col))
+                             "[Line {}:{}] Previous definition was here\n"
+                             .format(tok.line, tok.col, tok.val,
+                                     oldsym.line, oldsym.col))
         else:
             raise Exception("[Line {}:{}] Redefinition of {}\n"
                             "[Line {}:{}] Previous definition was here"
                             .format(tok.line, tok.col,
-                                tok.val, oldsym.line, oldsym.col))
+                                    tok.val, oldsym.line, oldsym.col))
     symtab.update({tok.val: Symbol(tok.line, tok.col, t, argtypes, glob, tree)})
 
 
@@ -120,7 +121,7 @@ def create_argtable(tree, symtab):
 def type_id(tree, symtab):
     if tree.tok.val not in symtab:
         raise Exception("[Line {}:{}] Found id {}, but it has not been defined"
-                .format(tree.tok.line, tree.tok.col, tree.tok.val))
+                        .format(tree.tok.line, tree.tok.col, tree.tok.val))
     return symtab[tree.tok.val].type
 
 
@@ -132,14 +133,14 @@ def type_exp_base(tree, symtab):
     elif tree.tok.type == '[]':
         return Type([Type(None)])
     elif tree.tok.type == 'FunCall':
-        t = type_expfunc(tree, symtab) # includes existence-check
+        t = type_expfunc(tree, symtab)  # includes existence-check
         gentab = check_funcall(tree, symtab)
         return apply_gentab(tree, t, gentab)
     elif tree.tok.type == ',':
         return Type((type_exp(tree.children[0], symtab),
-            type_exp(tree.children[1], symtab)))
+                    type_exp(tree.children[1], symtab)))
     else:
-        return type_exp_field(tree,symtab)
+        return type_exp_field(tree, symtab)
 
 
 def type_op(fn, in_types, out_type, ops, tree, symtab):
@@ -151,35 +152,35 @@ def type_op(fn, in_types, out_type, ops, tree, symtab):
                             "  Types expected: {}\n"
                             "  Types found: {}"
                             .format(tree.tok.line, tree.tok.col, tree.tok.type,
-                                ', '.join(map(str, in_types)),
-                                ', '.join(map(str, rev_types))))
+                                    ', '.join(map(str, in_types)),
+                                    ', '.join(map(str, rev_types))))
         return apply_gentab(tree, out_type, gentab)
     return fn(tree, symtab)
 
 type_exp_hd = partial(type_op, type_id,
-    [Type([Type('t')])], Type('t'), ['.hd'])
+                      [Type([Type('t')])], Type('t'), ['.hd'])
 type_exp_tl = partial(type_op, type_exp_hd,
-    [Type([Type('t')])], Type([Type('t')]), ['.tl'])
+                      [Type([Type('t')])], Type([Type('t')]), ['.tl'])
 type_exp_fst = partial(type_op, type_exp_tl,
-    [Type((Type('a'),Type('b')))], Type('a'), ['.fst'])
+                       [Type((Type('a'), Type('b')))], Type('a'), ['.fst'])
 type_exp_snd = partial(type_op, type_exp_fst,
-    [Type((Type('a'),Type('b')))], Type('b'), ['.snd'])
+                       [Type((Type('a'), Type('b')))], Type('b'), ['.snd'])
 type_exp_field = type_exp_snd
 
 type_exp_unint = partial(type_op, type_exp_base,
-    [Type('Int')], Type('Int'), ['-'])
+                         [Type('Int')], Type('Int'), ['-'])
 type_exp_unbool = partial(type_op, type_exp_unint,
-    [Type('Bool')], Type('Bool'), ['!'])
+                          [Type('Bool')], Type('Bool'), ['!'])
 type_exp_con = partial(type_op, type_exp_unbool,
-    [Type('t'), Type([Type('t')])], Type([Type('t')]), [':'])
+                       [Type('t'), Type([Type('t')])], Type([Type('t')]), [':'])
 type_exp_math = partial(type_op, type_exp_con,
-    [Type('Int'), Type('Int')], Type('Int'), ['+', '-', '*', '/', '%'])
+                        [Type('Int'), Type('Int')], Type('Int'), ['+', '-', '*', '/', '%'])
 type_exp_cmp = partial(type_op, type_exp_math,
-    [Type('Int'), Type('Int')], Type('Bool'), ['<', '<=', '>', '>='])
+                       [Type('Int'), Type('Int')], Type('Bool'), ['<', '<=', '>', '>='])
 type_exp_eq = partial(type_op, type_exp_cmp,
-    [Type('t'), Type('t')], Type('Bool'), ['==','!='])
+                      [Type('t'), Type('t')], Type('Bool'), ['==', '!='])
 type_exp_andor = partial(type_op, type_exp_eq,
-    [Type('Bool'), Type('Bool')], Type('Bool'), ['&&', '||'])
+                         [Type('Bool'), Type('Bool')], Type('Bool'), ['&&', '||'])
 type_exp = type_exp_andor
 
 
@@ -200,10 +201,10 @@ def apply_gentab(tree, t, gentab):
     if t.value in ['Int', 'Bool', 'Void']:
         return t
     if type(t.value) is str:
-        return gentab[t.value] # validated that it is always in the gentab
+        return gentab[t.value]  # validated that it is always in the gentab
     if type(t.value) is tuple:
         return Type((apply_gentab(tree, t.value[0], gentab),
-                apply_gentab(tree, t.value[1], gentab)))
+                    apply_gentab(tree, t.value[1], gentab)))
     if type(t.value) is list:
         return Type([apply_gentab(tree, t.value[0], gentab)])
 
@@ -212,7 +213,7 @@ def apply_generics(gen_type, lit_type, gentab):
     ''' checks if gen_type can be applied to lit_type, updates gentab '''
     if gen_type.value in ['Int', 'Bool']:
         return gen_type.unify(lit_type) is not None
-    if type(gen_type.value) is str: 
+    if type(gen_type.value) is str:
         if gen_type.value in gentab:
             result = gentab[gen_type.value].unify(lit_type)
             if not result:
@@ -223,7 +224,7 @@ def apply_generics(gen_type, lit_type, gentab):
         return True
     if type(gen_type.value) is tuple and type(lit_type.value) is tuple:
         return (apply_generics(gen_type.value[0], lit_type.value[0], gentab)
-            and apply_generics(gen_type.value[1], lit_type.value[1], gentab))
+                and apply_generics(gen_type.value[1], lit_type.value[1], gentab))
     if type(gen_type.value) is list and type(lit_type.value) is list:
         return apply_generics(gen_type.value[0], lit_type.value[0], gentab)
     return False
@@ -242,27 +243,27 @@ def check_funcall(tree, symtab):
                         "  Arguments expected: {}\n"
                         "  Arguments found: {}"
                         .format(tree.tok.line, tree.tok.col, fname,
-                            len(funsym.argtypes), len(received)))
+                                len(funsym.argtypes), len(received)))
     gentab = dict()
     if (not all(apply_generics(e, r, gentab)
-        for e, r in zip(funsym.argtypes, received))):
+    for e, r in zip(funsym.argtypes, received))):
         raise Exception("[Line {}:{}] Incompatible argument types "
                         "for function '{}'.\n"
                         "  Types expected: {}\n"
                         "  Types found: {}"
                         .format(tree.tok.line, tree.tok.col, fname,
-                            ', '.join(map(str, funsym.argtypes)),
-                            ', '.join(map(str, received))))
+                                ', '.join(map(str, funsym.argtypes)),
+                                ', '.join(map(str, received))))
     check_functionbinding(funsym.tree, symtab, fname)
     return gentab
 
 
-def check_stmt(tree, symtab, rettype):    
+def check_stmt(tree, symtab, rettype):
     ''' expects a tree with a statement node as root '''
     if tree.tok.type == 'Scope':
         return check_stmts(tree.children[0], symtab, rettype)
     elif tree.tok.type == 'FunCall':
-        type_expfunc(tree, symtab) # needed to confirm the id definition
+        type_expfunc(tree, symtab)  # needed to confirm the id definition
         check_funcall(tree, symtab)
     elif tree.tok.type == 'if' or tree.tok.type == 'while':
         condition = type_exp(tree.children[0], symtab)
@@ -272,7 +273,7 @@ def check_stmt(tree, symtab, rettype):
                             "  But got value of type: {}"
                             .format(tree.tok.line, tree.tok.col, condition))
         returned = False
-        if tree.tok.type == 'if' and tree.children[2]: # for 'else'-clause
+        if tree.tok.type == 'if' and tree.children[2]:  # for 'else'-clause
             returned = check_stmt(tree.children[2], symtab, rettype)
         return check_stmt(tree.children[1], symtab, rettype) and returned
     elif tree.tok.type == '=':
@@ -283,7 +284,7 @@ def check_stmt(tree, symtab, rettype):
                             "  Expected expression of type: {}\n"
                             "  But got value of type: {}"
                             .format(tree.tok.line, tree.tok.col,
-                                tree.children[0].tok.val, fieldtype, exptype))
+                                    tree.children[0].tok.val, fieldtype, exptype))
     elif tree.tok.type == 'return':
         if not tree.children[0]:
             exptype = Type('Void')
@@ -294,9 +295,9 @@ def check_stmt(tree, symtab, rettype):
                             "  Function is of type: {}\n"
                             "  But returns value of type: {}"
                             .format(tree.tok.line, tree.tok.col,
-                                rettype, exptype))
+                                    rettype, exptype))
         return True
-    
+
 
 def check_stmts(tree, symtab, rettype, outerscope=False):
     if tree:
@@ -305,9 +306,9 @@ def check_stmts(tree, symtab, rettype, outerscope=False):
             raise Exception("[Line {}:{}] Unreachable code detected\n"
                             "  If this is intentional, enclose it in comments"
                             .format(tree.children[1].children[0].tok.line,
-                                tree.children[1].children[0].tok.col))
+                                    tree.children[1].children[0].tok.col))
         if all([not returned, not tree.children[1],
-            outerscope, rettype.unify(Type('Void'))]):
+                outerscope, rettype.unify(Type('Void'))]):
             returnnode = Node(Token(0, 0, 'return', None), None)
             tree.children[1] = Node(';', returnnode, None)
         return returned or check_stmts(tree.children[1], symtab, rettype, outerscope)
@@ -321,14 +322,14 @@ def check_vardecl(tree, symtab):
                         "  Expected expression of type: {}\n"
                         "  But got value of type: {}"
                         .format(tree.children[1].tok.line,
-                            tree.children[1].tok.col, tree.children[1].tok.val,
-                            vartype, exptype))
+                                tree.children[1].tok.col, tree.children[1].tok.val,
+                                vartype, exptype))
 
 
 def list_generics(t):
     if t.value in ['Int', 'Bool', 'Void']:
         return set()
-    if type(t.value) is str: 
+    if type(t.value) is str:
         return set([t.value])
     if type(t.value) is tuple:
         return list_generics(t.value[0]) | list_generics(t.value[1])
@@ -347,15 +348,15 @@ def check_rettype_binding(tree, rettype, symtab):
         raise Exception("[Line {}:{}] Generic return type{} '{}' of function "
                         "{} not bound by arguments, so cannot be resolved."
                         .format(tree.children[1].tok.line,
-                            tree.children[1].tok.col,
-                            's' if len(unbound) > 1 else '',
-                            ', '.join(str(t) for t in sorted(unbound)),
-                            tree.children[1].tok.val))
-    
+                                tree.children[1].tok.col,
+                                's' if len(unbound) > 1 else '',
+                                ', '.join(str(t) for t in sorted(unbound)),
+                                tree.children[1].tok.val))
+
 
 def check_functionbinding(tree, globalsymtab, fname):
     if fname in symtabs:
-        return symtabs[fname] # to prevent infinite left-recursion via funcall
+        return symtabs[fname]  # to prevent infinite left-recursion via funcall
     rettype = globalsymtab[tree.children[1].tok.val].type
     symtabs[fname] = create_argtable(tree.children[2], globalsymtab.copy())
     check_rettype_binding(tree, rettype, symtabs[fname])
@@ -381,7 +382,7 @@ symtabs = None
 
 def check_binding(tree, globalsymtab=dict()):
     global symtabs
-    symtabs = {k: None for k in globalsymtab} # assume predef. functions are ok
+    symtabs = {k: None for k in globalsymtab}  # assume predef. functions are ok
     symtabs['_glob'] = dict(globalsymtab)
     symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, False))
     symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, True))
