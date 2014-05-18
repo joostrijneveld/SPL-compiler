@@ -537,9 +537,31 @@ main:
 \end{lstlisting}
 The {\tt brf 8} instruction jumps over the {\tt else} statement. We need to jump 8 addresses, because the {\tt if}-statement uses this space: 2 instructions without arguments + 3 instructions with arguments, where the instructions with arguments uses 2 addresses. This results in a total of 8 addresses.
 
+\subsection{Builtin functions}
+SPL has support for two builtin functions, namely the {\tt print} and the {\tt isEmpty} function. We decided to hardcode these functions into the assembly, they will look like:
+
+\begin{lstlisting}
+print:
+link 1		;	Reserve space for 1 local (print takes 1 argument)
+ldl 1		;	Load the first local argument onto the stack
+trap 0		;	Print top topmost element of the stack
+unlink		;	Clean the reserved space up
+ret			;	Return to original address of function call
+\end{lstlisting}
+\begin{lstlisting}
+isEmpty:
+link 1		;	Reserve space for 1 local (print takes 1 argument)
+ldl 1		;	Load the first local argument onto the stack
+ldc 0		;	Load constant used for comparison (= null-ptr)
+eq			;	Compare list element with 0
+str RR		;	Store result of comparison in return register
+unlink		;	Clean the reserved space up
+ret			;	Return to original address of function call
+\end{lstlisting}
+
 \newpage 
 \section{Example tests}
-%TODO: add example SSM for every test program
+%TODO: add example SSM for every test program? Will take a lot of pages\ldots
 \label{examples}
 
 \subsection{General function application}
