@@ -1,0 +1,11 @@
+[a] foo() {
+	return [];
+}
+
+Void call_foo() {
+	foo(); // should go right since we do
+	       // not use the return type
+}
+
+//[Int] c = foo();    // should go wrong since [a] is 
+                      // used here, but a is not bound

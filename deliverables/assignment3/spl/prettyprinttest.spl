@@ -1,0 +1,6 @@
+Int calc(Int x, Int y, Int z) { if((y+1)>0 && x / (y+1) > z) { 
+return (((((5*(((2+x)-6)+z))+(42%3))))); } return 0; }
+
+Int main() {
+	return calc(1,2,3);
+}

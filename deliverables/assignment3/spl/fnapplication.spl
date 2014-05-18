@@ -1,0 +1,11 @@
+Void foo(Int x) {
+	[Int] xs = x : [];
+	return;
+	// x = x + 1; // This is dead code
+}
+
+Void call_foo() {
+	foo(5);      // This should go right
+	//foo();     // This should go wrong
+	//foo(5, 6); // This should go wrong
+}

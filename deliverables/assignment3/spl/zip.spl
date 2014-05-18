@@ -1,0 +1,14 @@
+[(a,b)] zip ([a] a,[b] b) {
+	if ( isEmpty(a) || isEmpty(b) ) {
+		return [];
+	}
+	return (a.hd,b.hd) : zip (a.tl,b.tl);
+}
+
+Int main()
+{
+    [Int] ints = 1 : 2 : 3 :4 : [];
+    [Bool] bools = True : False: False: True : [];
+    [(Int,Bool)] zipped = zip(ints,bools);
+    return 1;
+}

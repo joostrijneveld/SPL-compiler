@@ -1,0 +1,23 @@
+Int inc(Int x) {
+	return x + 1;
+}
+
+Int count_to_ten() {
+	Int x = 0;
+	while (x <= 10) {
+		x = inc(x);
+	}
+	return x;
+}
+
+a identity(a x) {
+	return x;
+}
+
+Void main() {
+	// Bool x = y; // This should break: y is not defined
+	Bool y = identity(True);
+	// a x = 0; // This should break: 'a' != 'Int'
+	//inc(x);
+	return;
+}
