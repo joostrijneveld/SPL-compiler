@@ -311,8 +311,231 @@ All scoping rules are explicitly enforced through fatal errors, meaning that the
 \section{Semantics of SPL}
 %TODO
 
-\section{Compilation Scheme}
-%TODO
+\section{Compilation Schemes}
+
+\subsection{Memory Management: The stack and the heap}
+SSM contains a heap and a stack that can be used for memory management. The stack has far more instructions for data manipulation than the heap, which is one of the reasons to use it as a dynamic working space. The heap is then used for the static data, like the data inside tuples and lists. We also use the heap for global variables. All the other relevant data is stored on the stack. We will explain this more carefully with some examples. 
+
+\subsubsection{Global variables}
+Global variables are stored on the heap. Our compiler will first reserve space for all the global variables when it compiles an SPL program. After this space has been reserved, we will initialise the value of the variables, by parsing the expressions (the right side of an variable assignment is an expression in SPL). An example:
+
+The SPL:
+\begin{lstlisting}
+Int x = 5;
+Bool y = True;
+\end{lstlisting}
+Will translate to:
+%\begin{lstlisting}[language={[x86masm]Assembler}]
+\begin{lstlisting}
+ldc 2002	;	Reserve 2002-2000 = 2 space for 2 global vars
+str HP		;	More HP +2	
+ldc 5		; 	Load value for x (parse expression for x)
+ldc 2000	;	Load address of x
+sta 0		;	Store value (=5) at address of x in heap
+ldc -1		;	Load value for y (bool True is encoded as -1)
+ldc 2001	;	Load address of y
+sta 0		;	Store value (=True=-1) at address of y in heap
+halt		
+\end{lstlisting}
+
+\subsubsection{Function Calls}
+When we call a function, we will need to copy the arguments of the function call to the stack space of this function. By doing this will arguments for functions be passed by value. Because a function needs space for its return address and the mark pointer (which will be explained later), we need to place the arguments at 2 stack positions further than our current stack pointer. Therefore, we need to increment the stack pointer, place the arguments and set the stack pointer back to the original position. When we then call the function, the functions arguments will already be at the right place. An example:
+
+\begin{lstlisting}
+Int x = id(5);
+Int id(Int y)
+{
+	Int z = 5;
+	return y;
+}
+\end{lstlisting}
+The function call of this SPL program will look like:
+\begin{lstlisting}
+ldc 2002	;	Reserve 2001-2000 = 1 space for 1 global var
+str HP		;	More HP +1
+ajs 2		;	Move SP to set function argument
+ldc 5		;	Load function argument
+ajs -3		;	Move SP back
+bsr id		;	Call function
+ldr RR		;	Get return value (=5)
+ldc 2000	;	Get address of x
+sta 0		;	Store return value (=5) at address of x in heap
+halt
+\end{lstlisting}
+
+\subsubsection{Function declarations}
+Inside a function, we need to reserve space for both the function arguments as the local variables. SPL has a convenient instruction for this purpose, namely the {\tt link n} instruction. This instruction moves the stack pointer $n$ positions (where $n$ is the amount of variables you have). After this reservation, it will place the mark pointer at the top of the stack. The mark pointer can then be used to refer to the local variables. We will explain this with an example:
+
+When we recall the id function of our last SPL program, then the function declaration will in SSM look like:
+\begin{lstlisting}
+id:			;	Just a label, used to branch to this address
+link 2		;	Reserve space for 2 vars: argument y and local var z
+ldc 5		;	Load value for y
+stl 2		;	Store in second local var (2 is address of mark pointer +2)
+ldl 1		;	Load the first local var (=x and already copied to this 
+			;	position in the function call)
+str RR		;	Store x in the return register
+unlink		;	Clean the reserved space up (local vars are no longer 
+			;	needed after the function)
+ret			;	Return to original address of function call
+\end{lstlisting}
+
+\subsubsection{List and tuples}
+List and tuples are stored in the heap. On the stack we maintain a pointer to the first element in the heap if it is a local variable. For global lists and tuples, we also maintain this first pointer on the heap (at the same location as the other global variables). When we call a function with a list/tuple as argument, we give this function the pointer to this list/tuple. Therefore are lists and tuples always passed by reference instead of by value. 
+
+Let we first show an example of a list of the integers 1,2,3. We need to store every element plus a pointer to next element on the heap. The pointer of the last element is a null-pointer, to denote the end of the list:
+\begin{lstlisting}
+[Int] x = 1: 2: 3: [];
+\end{lstlisting}
+\begin{lstlisting}
+ldc 2001	;	Reserve 2001-2000 = 1 space for 1 global var
+str HP		;	More HP +1
+ldc 1		;	Load first element of the list
+ldc 2		;	Load second element of the list
+ldc 3		;	Load third element of the list
+ldc 0		;	Load null-pointer for empty list
+sth			;	Store this null-pointer on the heap (returns pointer stack)
+ajs -1		;	Throw returned heap address away
+sth			;	Store third element on the heap (return pointer to stack)
+sth			;	Store pointer to third element on the heap
+ajs -1		;	Throw returned heap address away
+sth			;	Store second element on the heap (return pointer to stack)
+sth			;	Store pointer to second element on the heap
+ajs -1		;	Throw returned heap address away
+sth			;	Store first element on the heap (return pointer to stack)
+ldc 2000	;	Load heap address of global var x
+sta 0		;	Store pointer to first element in global var x
+halt
+\end{lstlisting}
+After exectution of this program, the heap will look like:
+
+%TODO Tikz tekening met pijltjes naar addressen zoals in slides? wel veel werk\ldots
+\begin{tabular}{|l|l|l|}
+	\hline
+	Address & Value & Description \\
+	\hline
+	000007d0 & 000007d6 & Ptr of x to list \\
+	000007d1 & 00000000 & Null-ptr (last element) \\
+	000007d2 & 00000003 & Third element  \\
+	000007d3 & 000007d2 & Ptr to third element  \\
+	000007d4 & 00000002 & Second element  \\
+	000007d5 & 000007d4 & Ptr to second element  \\
+	000007d6 & 00000001 & First element  \\
+	\hline
+\end{tabular}
+
+Tuples are also stored in the heap, but there is no need to combine each element with a pointer to the next element, since we can only make tuples of 2 values. An example:
+\begin{lstlisting}
+(Int,Int) x = (5, 6);
+\end{lstlisting}
+
+\begin{lstlisting}
+ldc 2001	;	Reserve 2001-2000 = 1 space for 1 global var
+str HP		;	More HP +1
+ldc 5		;	Load first element of the tuple
+ldc 6		;	Load second element of the tuple
+sth			;	Store the second element on the heap
+ajs -1		;	Throw returned heap address away
+sth			;	Store the first element on the heap
+ldc 2000	;	Load heap address of global var x
+sta 0		;	Store pointer to first element in global var x
+halt
+\end{lstlisting}
+After exectution of this program, the heap will look like:
+
+%TODO Tikz tekening met pijltjes naar addressen zoals in slides? wel veel werk\ldots
+\begin{tabular}{|l|l|l|}
+	\hline
+	Address & Value & Description \\
+	\hline
+	000007d0 & 000007d2 & Ptr of x to tuple \\
+	000007d1 & 00000006 & Second element  \\
+	000007d2 & 00000005 & First element  \\
+	\hline
+\end{tabular}
+
+We can also combine lists and tuples, as shown in the next example: 
+\begin{lstlisting}
+([Int], Int) x = ( 1 : 2 : [], 6);
+\end{lstlisting}
+
+Which will result in the following SPL:
+\begin{lstlisting}
+ldc 2001	;	Reserve 2001-2000 = 1 space for 1 global var
+str HP		;	More HP +1
+ldc 1		;	Load first element of the list
+ldc 2		;	Load second element of the list
+ldc 0		;	Load null-pointer for empty list
+sth			;	Store the null-pointer on the heap
+ajs -1		;	Throw returned heap address away
+sth			;	Store the second element on the heap
+sth			;	Store second element on the heap (return pointer to stack)
+ajs -1		;	Throw returned heap address away
+sth			;	Store third element on the heap (return pointer to stack)
+ldc 6		;	Load second element of tuple (first value is ptr to list)
+sth			;	Store second element on the heap
+ajs -1		;	Throw returned heap address away
+sth			;	Store first element on the heap (is a ptr to list)
+ldc 2000	;	Load heap address of global var x
+sta 0		;	Store pointer to first element in global var x
+halt
+\end{lstlisting}
+
+After execution, the memory will look like:
+
+\begin{tabular}{|l|l|l|}
+	\hline
+	Address & Value & Description \\
+	\hline
+	000007d0 & 000007d6 & Ptr of x to tuple \\
+	000007d1 & 00000000 & Null-ptr (last element) \\
+	000007d2 & 00000002 & Second element of list \\
+	000007d3 & 000007d2 & Ptr to second element of list \\
+	000007d4 & 00000001 & First element of list \\
+	000007d5 & 00000006 & Second element of tuple \\
+	000007d6 & 000007d4 & First element of tuple (ptr to list) \\
+	\hline
+\end{tabular}
+
+\subsection{Branching}
+SPL has support for both {\tt if}-{\tt else} and {\tt while}-statements. To determine in an {\tt if}-statement whether we need to execute the if-part or the else-part, we need to check the condition. After this check we need to branch over the {\tt if} or the {\tt else}, and thus we need to count the number of instructions that needs to be skipped. While SSM also has support for jumping to labels, we decided not to use it because it is hard to make unique labels in the case of deep nested {\tt if}-statements. An example of an {\tt if}-{\tt else}-construction:
+
+\begin{lstlisting}
+Int x = main();
+
+Int main() {
+	if ( 3 > 4 )
+		return 5;
+	else
+		return 6;
+}	
+\end{lstlisting}
+Which will result in the following SSM:
+\begin{lstlisting}
+ldc 2001	;	Reserve 2001-2000 = 1 space for 1 global var
+str HP		;	More HP +1
+bsr main	;	Call main function
+ldr RR		;	Load return value (=6)
+ldc 2000	;	Load heap address of global var x
+sta 0		;	Store return value in global x
+halt
+main:		
+	link 0	;	Reserve space for locals (0 in this case)
+	ldc 3	;	Load first constant for expression
+	ldc 4	;	Load second constant for expression
+	gt		;	Compare two values, place true/false on stack
+	brf 8	;	Branch if false 8 instructions (to else statement)
+	ldc 5	;	Load return value in if-statement
+	str RR	;	Store x in the return register
+	unlink	;	Clean the reserved space up
+	ret		;	Return to original address of function call
+	bra 6	;	Skip the else statement
+	ldc 6	;	Load return value in else-statement
+	str RR	;	Store x in the return register
+	unlink	;	Clean the reserved space up
+	ret		;	Return to original address of function call
+\end{lstlisting}
+The {\tt brf 8} instruction jumps over the {\tt else} statement. We need to jump 8 addresses, because the {\tt if}-statement uses this space: 2 instructions without arguments + 3 instructions with arguments, where the instructions with arguments uses 2 addresses. This results in a total of 8 addresses.
 
 \newpage 
 \section{Example tests}
