@@ -1,0 +1,28 @@
+
+SPL/SSM-fix-van-allerlei-dingen
+	system calls:
+s		printen van ascii
+s		user input
+s		sockets / file IO
+		
+	dingen die SPL en code-gen aanpassen
+s		strings, characters
+s		heap en stack zoals in het echt memory-model
+		operator overloading
+			functies worden niet alleen op naam ge-identified, maar ook op argumenten
+		infix functies
+		triviale SPL-dingen zoals n-tuples
+		lazy evaluation dmv generators
+		simple imports / moduling
+		
+	language constructs die je kan vertalen naar andere SPL (preprocessor):
+		pattern matching
+		switch-cases
+		forloops (enhanced)
+		list comprehensions
+		tuple unpacking
+	
+	various Stdlib functions in SPL (for fun)
+	
+
+	
