@@ -332,10 +332,10 @@ Int main() {
 \section{Compilation Schemes}
 
 \subsection{Memory Management: The stack and the heap}
-SSM contains a heap and a stack that can be used for memory management. The stack has far more instructions for data manipulation than the heap, which is one of the reasons to use it as a dynamic working space. The heap is then used for the static data, like the data inside tuples and lists. We also use the heap for global variables. All the other relevant data is stored on the stack. We will explain this more carefully with some examples. 
+SSM contains a heap and a stack that can be used for memory management. The stack has far more instructions for data manipulation than the heap, which is one of the reasons to use it as a dynamic working space. The heap is used for the static data, like the data inside tuples and lists. We also use the heap for global variables. All the other relevant data is stored on the stack. We will explain this in more detail and illustrate it with some examples. 
 
 \subsubsection{Global variables}
-Global variables are stored on the heap. Our compiler will first reserve space for all the global variables when it compiles an SPL program. After this space has been reserved, we will initialise the value of the variables, by parsing the expressions (the right side of a variable assignment is an expression in SPL). An example:
+Global variables are stored on the heap. Our compiler will first reserve space for all the global variables when it compiles an SPL program. After this space has been reserved, we initialise the value of the variables, by recursively generating the expressions (the right side of a variable assignment is an expression in SPL). An example:
 
 The SPL:
 \begin{lstlisting}
@@ -357,7 +357,7 @@ halt
 \end{lstlisting}
 
 \subsubsection{Function Calls}
-When we call a function, we will need to copy the arguments of the function call to the stack space of this function. By doing this will arguments for functions be passed by value. Because a function needs space for its return address and the mark pointer (which will be explained later), we need to place the arguments at 2 stack positions further than our current stack pointer. Therefore, we need to increment the stack pointer, place the arguments and set the stack pointer back to the original position. When we then call the function, the functions arguments will already be at the right place. An example:
+When we call a function, we will need to copy the arguments of the function call to the stack space of this function. By it this way, the function arguments will be passed by value. Because a function needs space for its return address and the mark pointer (which will be explained later), we need to place the arguments at 2 stack positions further than our current stack pointer. Therefore, we need to increment the stack pointer, place the arguments and set the stack pointer back to the original position. When we then call the function, the functions arguments will already be at the right place. An example:
 
 \begin{lstlisting}
 Int x = id(5);
@@ -382,7 +382,7 @@ halt
 \end{lstlisting}
 
 \subsubsection{Function declarations}
-Inside a function, we need to reserve space for both the function arguments as the local variables. SPL has a convenient instruction for this purpose, namely the {\tt link n} instruction. This instruction moves the stack pointer $n$ positions (where $n$ is the amount of variables you have). After this reservation, it will place the mark pointer at the top of the stack. The mark pointer can then be used to refer to the local variables. We will explain this with an example:
+Inside a function, we need to reserve space for both the function arguments as well as the local variables. SPL has a convenient instruction for this purpose, namely the {\tt link n} instruction. This instruction moves the stack pointer $n$ positions (where $n$ is the amount of variables you have). After this reservation, it will place the mark pointer at the top of the stack. The mark pointer can then be used to refer to the local variables. We will explain this with an example:
 
 When we recall the id function of our last SPL program, then the function declaration will in SSM look like:
 \begin{lstlisting}
@@ -399,9 +399,9 @@ ret			;	Return to original address of function call
 \end{lstlisting}
 
 \subsubsection{Lists and tuples}
-Lists and tuples are stored in the heap. On the stack we maintain a pointer to the first element in the heap if it is a local variable. For global lists and tuples, we also maintain this first pointer on the heap (at the same location as the other global variables). When we call a function with a list/tuple as argument, we give this function the pointer to this list/tuple. Therefore are lists and tuples always passed by reference instead of by value. 
+Lists and tuples are stored in the heap. On the stack we maintain a pointer to the first element in the heap if it is a local variable. For global lists and tuples, we maintain this first pointer on the heap as well (at the same location as the other global variables). When we call a function with a list/tuple as argument, we give this function the pointer to this list/tuple. Therefore lists and tuples are always passed by reference instead of by value. 
 
-Let we first show an example of a list of the integers 1,2,3. We need to store every element plus a pointer to next element on the heap. The pointer of the last element is a null-pointer, to denote the end of the list:
+We first show an example of a list of the integers 1,2,3. We need to store every element plus a pointer to next element on the heap. The pointer of the last element is a null-pointer, to denote the end of the list:
 \begin{lstlisting}
 [Int] x = 1: 2: 3: [];
 \end{lstlisting}
@@ -425,7 +425,7 @@ ldc 2000	;	Load heap address of global var x
 sta 0		;	Store pointer to first element in global var x
 halt
 \end{lstlisting}
-After exectution of this program, the heap will look like:
+After execution of this program, the heap will look like:
 
 %TODO Tikz tekening met pijltjes naar addressen zoals in slides? wel veel werk\ldots
 \begin{tabular}{|l|l|l|}
@@ -442,7 +442,7 @@ After exectution of this program, the heap will look like:
 	\hline
 \end{tabular}
 
-Tuples are also stored in the heap, but there is no need to combine each element with a pointer to the next element, since we can only make tuples of 2 values. An example:
+Tuples are also stored in the heap, but there is no need to combine each element with a pointer to the next element, since the length of tuples is constant and known at compile-time. An example:
 \begin{lstlisting}
 (Int,Int) x = (5, 6);
 \end{lstlisting}
@@ -459,7 +459,7 @@ ldc 2000	;	Load heap address of global var x
 sta 0		;	Store pointer to first element in global var x
 halt
 \end{lstlisting}
-After exectution of this program, the heap will look like:
+After execution of this program, the heap will look like:
 
 %TODO Tikz tekening met pijltjes naar addressen zoals in slides? wel veel werk\ldots
 \begin{tabular}{|l|l|l|}
@@ -556,7 +556,7 @@ main:
 The {\tt brf 8} instruction jumps over the {\tt else} statement. We need to jump 8 addresses, because the {\tt if}-statement uses this space: 2 instructions without arguments + 3 instructions with arguments, where the instructions with arguments uses 2 addresses. This results in a total of 8 addresses.
 
 \subsection{Builtin functions}
-SPL has support for two builtin functions, namely the {\tt print} and the {\tt isEmpty} function. We decided to hardcode these functions into the assembly, they will look like:
+SPL has support for two built-in functions, namely the {\tt print} and the {\tt isEmpty} function. We decided to hardcode these functions into the assembly. They look like this:
 
 \begin{lstlisting}
 print:
@@ -1170,6 +1170,11 @@ The only part we really did do parallel rather than together was the creation of
 This way of working worked out well for us, and generally keeps us on schedule, as it forces us to plan regular `sessions' to work on the compiler. We aim to keep this up during the last two parts of the course.
 
 \subsection{Part 3: Code Generation}
-%TODO
+
+Similarly to the previous parts, we again worked on the code generation together rather than actually dividing the work. In our experience, part 3 was conceptually a bit more difficult to get started with. This caused us to first spend a few hours mapping out our plans, defining how we would translate function calls, and choosing how we would store the data structures. It was also valuable to just try out various (combinations of) assembly instructions in the interpreter and discuss the results. As we had quite a thorough plan (and understanding of the language) before we started writing the generator, writing the actual code generator was surprisingly easy.
+
+As the deadline for this part was quite lenient, we were able to finish it all (i.e. including this document) while working together and discussing the code constantly as we progressed. This proved to be a great way to prevent errors and inconsistencies.
+
+This way of `dividing' the work seems to work well for us, so we intend to approach part 4 in a similar fashion.
 
 \end{document}
