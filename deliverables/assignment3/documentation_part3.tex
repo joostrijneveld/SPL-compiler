@@ -309,7 +309,25 @@ With respect to generic types, it should perhaps be noted that generic types spe
 All scoping rules are explicitly enforced through fatal errors, meaning that the usage of unbound variables or the calling undefined functions does not result in undefined behaviour (like in {\tt C}), but simply terminates immediately with an exception.
 
 \section{Semantics of SPL}
-%TODO
+The syntax of SPL was already obvious from the start of our compiler, because a grammar of SPL was provided. This was not the case with the semantics and thus we needed to make decisions about the semantics from the very beginning. One of the first decisions we made was about the order of operators: we needed to define the operator associativity already in the parser. Here we chose to use the same approach as C, as found on \url{http://en.wikipedia.org/wiki/C\_operators}. 
+
+SPL has support for the primitive data types like Integers, Booleans as well as more complex data types like lists and tuples. The primitive data types are stored on the stack, and thus are always called by value when we use them as a function argument. Lists and tuples are stored on the heap, with only a pointer on the stack remaining. Therefore, this data types are called by reference when used as function arguments. This also has some other implications: an equality on lists and tuples will just compare the pointers instead of the whole lists. Another implication is the assignment of a part (ie the tail) of a list, which can be shown with an example:
+\begin{verbatim}
+[Int] x = 1 : 2 : 3 : [];
+[Int] y = 5 : 6 : 7 : [];
+x.tl = y; // Just a pointer will be changed here
+y.hd = 1; // This will also change x
+\end{verbatim}
+In this example will the tail of the list $x$ be pointed to $y$. The list will contain then the following elements: $[1, 5, 6, 7, [\;]]$. If we change the head of $y$ to 1, then the second element of $x$ will also be changed to 1, resulting in the following elements: $[1, 1, 6, 7, [\;]]$.
+
+Beside the decisions about pointers, we also needed to determine how a SPL program can be started. The grammer does not obligate you to construct a main function. We decided to keep it this way. Therefore, you need to create at least one variable that calls a function (for example a self constructed main function) to let something interesting happen. You can for example make a `Start' variable:
+\begin{verbatim}
+Int Start = main();
+
+Int main() {
+        return 1;
+}
+\end{verbatim}
 
 \section{Compilation Schemes}
 
@@ -380,8 +398,8 @@ unlink		;	Clean the reserved space up (local vars are no longer
 ret			;	Return to original address of function call
 \end{lstlisting}
 
-\subsubsection{List and tuples}
-List and tuples are stored in the heap. On the stack we maintain a pointer to the first element in the heap if it is a local variable. For global lists and tuples, we also maintain this first pointer on the heap (at the same location as the other global variables). When we call a function with a list/tuple as argument, we give this function the pointer to this list/tuple. Therefore are lists and tuples always passed by reference instead of by value. 
+\subsubsection{Lists and tuples}
+Lists and tuples are stored in the heap. On the stack we maintain a pointer to the first element in the heap if it is a local variable. For global lists and tuples, we also maintain this first pointer on the heap (at the same location as the other global variables). When we call a function with a list/tuple as argument, we give this function the pointer to this list/tuple. Therefore are lists and tuples always passed by reference instead of by value. 
 
 Let we first show an example of a list of the integers 1,2,3. We need to store every element plus a pointer to next element on the heap. The pointer of the last element is a null-pointer, to denote the end of the list:
 \begin{lstlisting}
