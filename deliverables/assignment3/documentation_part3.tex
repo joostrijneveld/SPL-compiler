@@ -317,7 +317,7 @@ All scoping rules are explicitly enforced through fatal errors, meaning that the
 SSM contains a heap and a stack that can be used for memory management. The stack has far more instructions for data manipulation than the heap, which is one of the reasons to use it as a dynamic working space. The heap is then used for the static data, like the data inside tuples and lists. We also use the heap for global variables. All the other relevant data is stored on the stack. We will explain this more carefully with some examples. 
 
 \subsubsection{Global variables}
-Global variables are stored on the heap. Our compiler will first reserve space for all the global variables when it compiles an SPL program. After this space has been reserved, we will initialise the value of the variables, by parsing the expressions (the right side of an variable assignment is an expression in SPL). An example:
+Global variables are stored on the heap. Our compiler will first reserve space for all the global variables when it compiles an SPL program. After this space has been reserved, we will initialise the value of the variables, by parsing the expressions (the right side of a variable assignment is an expression in SPL). An example:
 
 The SPL:
 \begin{lstlisting}
@@ -481,7 +481,7 @@ sta 0		;	Store pointer to first element in global var x
 halt
 \end{lstlisting}
 
-After execution, the memory will look like:
+After execution, the heap will look like:
 
 \begin{tabular}{|l|l|l|}
 	\hline
@@ -798,54 +798,40 @@ Position     Name            Type            Argtypes
 \end{verbatim}
 
 
-\subsection{Unbound return types}
-With this example, we want to demonstrate what happens when you try to apply a unbound return type to a concrete type. The code can be found in {\tt unboundreturntype.spl}. 
-\lstinputlisting{spl/unboundreturntype.spl}
-Here we can see that the function call on line 6 will go right, since we do not use the return type here. But the call on line 10 does not work, because the unbound `a' cannot be mapped to [Int]. If we enable this line, we get the following exception: 
-
+\subsection{Assignment in lists}
+With this example, we want to show that it is possible to overwrite a part of a list with another list. In general this shows that we can do field assignments. In assembly, this will be fixed by changing the pointers. We demonstrate this with the following SPL code:
+\lstinputlisting{spl/headassignment.spl}
+This will produce the following symbol table and pretty-printed program: 
 \begin{verbatim}
-Exception: [Line 10:11] Generic return type 'a' is not bound by arguments 
-                        for function 'foo', so cannot be resolved.
-\end{verbatim}
-
-If we disable this line (by putting it in comments), we can pretty-print and show the symbol table of this program:
-\begin{verbatim}
-[a] foo()
+Int x = main();
+Int main()
 {
-        return [];
-}
-Void call_foo()
-{
-        foo();
+        [Int] y = (1 : (2 : (3 : [])));
+        [Int] z = (7 : (8 : (9 : [])));
+        y.tl.tl = z;
+        return y.tl.tl.hd;
 }
 
 =========================== _glob ============================
 Position     Name            Type            Argtypes            
 --------------------------------------------------------------
 0:0          print           'Void'          't'                 
-1:6          foo             'Void'          'Int'               
+1:5          x               'Int'           None                
+3:5          main            'Int'                               
 0:0          isEmpty         'Bool'          ['t']               
-7:6          call_foo        'Void'                              
 ==============================================================
-============================ foo =============================
-Position     Name            Type            Argtypes            
---------------------------------------------------------------
-0:0          isEmpty         'Bool'          ['t']               
-2:8          xs              ['Int']         None                
-0:0          print           'Void'          't'                 
-1:14         x               'Int'           None                
-1:6          foo             'Void'          'Int'               
-7:6          call_foo        'Void'                              
-==============================================================
-========================== call_foo ==========================
+============================ main ============================
 Position     Name            Type            Argtypes            
 --------------------------------------------------------------
 0:0          print           'Void'          't'                 
-1:6          foo             'Void'          'Int'               
+4:8          y               ['Int']         None                
+3:5          main            'Int'                               
 0:0          isEmpty         'Bool'          ['t']               
-7:6          call_foo        'Void'                              
+5:8          z               ['Int']         None                
 ==============================================================
 \end{verbatim}
+
+
 
 \subsection{Unequal comparison}
 When we want to sort two lists and compare them, they should be of the same type. The program in the file {\tt unequalcomparisongenerics.spl} gives an example of this problem. This is the program that was briefly discussed on the Blackboard at the second seminar.

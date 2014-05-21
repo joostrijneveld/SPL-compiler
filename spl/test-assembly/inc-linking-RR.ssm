@@ -22,6 +22,9 @@ inc:
 
 main:
 	link 2		; reserve space for the local y
+	ldc 5
+	ldc 2000
+	sta 0
 	; to calculate y, we first need inc(x), thus retrieve x from heap
 	ldml -2 2	; get location of x from stack
 	ldmh 0 2 	; retrieve value and data type of x from heap
