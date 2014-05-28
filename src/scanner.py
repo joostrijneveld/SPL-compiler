@@ -4,20 +4,24 @@ import re
 from collections import namedtuple, deque
 
 LITERALS = [
-    'True', 'False',
-    'if', 'then', 'else', 'while', 'return', 'Void', 'Int', 'Bool', '[]',
+    'True', 'False', 'Int', 'Bool', 'Char', 'Void', '[]',
+    'if', 'then', 'else', 'while', 'return',
     '!', '-', '+', '*', '/', '%', ':', '&&', '||',
     '==', '<', '>', '<=', '>=', '!=',
     ',', ';', '{', '}', '[', ']', '(', ')', '=',
     '.hd', '.tl', '.fst', '.snd']
 
-TOKENTYPES = ['id', 'int'] + LITERALS
+TOKENTYPES = ['id', 'int', 'char'] + LITERALS
 
 
 class Token(namedtuple('TokenBase', ['line', 'col', 'type', 'val'])):
     def __repr__(self):
-        return (self.type + ('['+str(self.val)+']')*(self.val is not None) +
-                ' [' + str(self.line) + ':' + str(self.col) + ']')
+        
+        #return (self.type + ('['+str(self.val)+']')*(self.val is not None) +
+         #       ' [' + str(self.line) + ':' + str(self.col) + ']')
+        t = (self.type + ('['+unicode(self.val)+']')*(self.val is not None) +
+                 ' [' + unicode(self.line) + ':' + unicode(self.col) + ']')
+        return t
 
 
 class Position:
@@ -56,6 +60,9 @@ def update_candidates(candidates, token):
         if t == 'id':
             if not re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
                 candidates.remove(t)
+        elif t == 'char':
+            if not token[0] == "'" or len(token) > 3 or len(token) == 3 and token[2] != "'":
+                candidates.remove(t)
         elif t == 'int':
             if not token.isdigit():
                 candidates.remove(t)
@@ -65,7 +72,10 @@ def update_candidates(candidates, token):
 
 
 def complete_token(candidates, token, tokens, p):
+    print '>>>', token, len(candidates)
     if len(candidates) == 1:
+        if candidates[0] == 'char' and not (token[0] == token[-1] == "'"):
+            raise Exception("Invalid character "+token)
         result = candidates[0]
     else:
         for t in list(candidates):
@@ -75,9 +85,12 @@ def complete_token(candidates, token, tokens, p):
         else:
             if re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
                 result = 'id'
+            elif token[0] == token[-1] == "'":
+                raise Exception("hoi")
+                result = 'char'
             else:
                 raise Exception("Unrecognised token: "+token)
-    if result == 'id':
+    if result in ['id', 'char']:
         tokens.append(Token(p.line, p.eval_tokpos(), result, token))
     elif result == 'int':
         tokens.append(Token(p.line, p.eval_tokpos(), result, int(token)))

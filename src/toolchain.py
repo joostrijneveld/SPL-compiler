@@ -2,9 +2,14 @@
 
 # from __future__ import print_function
 import sys
-import parser, scanner, prettyprinter
+import codecs
+
+import scanner
+import parser
+import prettyprinter
 import semanticanalysis
 import generator
+
 from semanticanalysis import Type, Symbol
 
 def help():
@@ -16,19 +21,24 @@ def main():
 	if len(sys.argv) != 3:
 		help()
 		return
-		
-	with open(sys.argv[1], 'r') as fin:
-		tokens = scanner.scan_spl(fin)
-	tree = parser.build_tree(tokens)
-	print str(tree)
-	predefined = {
-		'isEmpty': Symbol(0, 0, Type('Bool'), [Type([Type('t')])], True, None),
-		'print'  : Symbol(0, 0, Type('Void'), [Type('t')], True, None)
-	}
-	symtab = semanticanalysis.check_binding(tree, predefined)
-	prettyprinter.print_tree(tree)
-	with open(sys.argv[2], 'w') as fout:
-		generator.generate_ssm(tree, symtab, fout)
+	fin = codecs.open(sys.argv[1], encoding='utf-8')
+	# with open(sys.argv[1], 'r') as fin:
+	tokens = scanner.scan_spl(fin)
+	fin.close()
+	print unicode(tokens[3])
+	print tokens
+
+	# print len(tokens)
+	# tree = parser.build_tree(tokens)
+	# print str(tree)
+	# predefined = {
+	# 	'isEmpty': Symbol(0, 0, Type('Bool'), [Type([Type('t')])], True, None),
+	# 	'print'  : Symbol(0, 0, Type('Void'), [Type('t')], True, None)
+	# }
+	# symtab = semanticanalysis.check_binding(tree, predefined)
+	# prettyprinter.print_tree(tree)
+	# with open(sys.argv[2], 'w') as fout:
+	# 	generator.generate_ssm(tree, symtab, fout)
 	
 if __name__ == '__main__':
 	main()

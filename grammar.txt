@@ -8,6 +8,7 @@ FunDecl = "Void" id "(" [ Fargs ] ")" "{" VarDecl* Stmt+ "}"
 				
 Type 	= "Int"
 		| "Bool"
+		| "Char"
 		| "(" Type "," Type ")"
 		| "[" Type "]"
 		| id
@@ -36,6 +37,7 @@ ExpBase	= ExpField
 		| ExpFunc
 		| int
 		| bool
+		| char
 		| "[" "]"
 		| "(" Exp ")"
 		| "(" Exp "," Exp ")"
@@ -47,3 +49,4 @@ ExpArgs	 = Exp [ "," ExpArgs ]
 int		= digit+
 id 		= alpha ("_" | alphaNum)*
 bool	= True | False
+char 	= "'" UTF8 "'"
