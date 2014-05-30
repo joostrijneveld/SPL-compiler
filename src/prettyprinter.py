@@ -44,7 +44,7 @@ def print_rettype(tree):
         print_type(tree)
         
 def print_type(tree):
-    if tree.tok.type in ['Int', 'Bool']:
+    if tree.tok.type in ['Int', 'Bool', 'Char']:
         out(tree.tok.type)
     elif tree.tok.type == 'id':
         out(tree.tok.val)
@@ -114,7 +114,7 @@ def print_exp(tree):
         out(' '+tree.tok.type+' ')
         print_exp(tree.children[1])
         out(')')
-    elif tree.tok.type == 'int' or tree.tok.type == 'bool':
+    elif tree.tok.type in ['int', 'bool', 'char']:
         out(str(tree.tok.val))
     elif tree.tok.type in ['.hd', '.tl', '.fst', '.snd'] \
         or tree.tok.type == 'id':

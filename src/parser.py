@@ -52,7 +52,7 @@ def parse_vardecl(tokens, t=None):
 
 
 def start_of_vardecl(tokens):
-    if tokens[0].type in ['Int', 'Bool', '(', '[']:
+    if tokens[0].type in ['Int', 'Bool', 'Char', '(', '[']:
         return True
     return tokens[0].type == 'id' and tokens[1].type == 'id'
 
@@ -82,7 +82,7 @@ def parse_fundecl(rettype, tokens):
 
 def parse_type(tokens):
     tok = tokens.popleft()
-    if tok.type in ['Int', 'Bool', 'id']:
+    if tok.type in ['Int', 'Bool', 'Char', 'id']:
         return Node(tok)
     if tok.type == '(':
         t_left = parse_type(tokens)
@@ -186,7 +186,7 @@ def parse_exp_base(tokens):
             result = parse_exp_func(tok, tokens)
             return result
         return parse_exp_field(tok, tokens)
-    elif tok.type in ['int', 'bool', '[]']:
+    elif tok.type in ['int', 'bool', 'char', '[]']:
         return Node(tok)
     elif tok.type == '(':
         t_left = parse_exp(tokens)
