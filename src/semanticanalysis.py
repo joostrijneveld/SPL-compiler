@@ -62,12 +62,12 @@ def print_symboltables(symtabs):
         print("{0: <12} {1: <15} {2: <15} {3: <20}"
               .format('Position', 'Name', 'Type', 'Argtypes'))
         print '-'*62
-        for k, v in symboltable.iteritems():
+        for k, v in symboltable.items():
             argvstring = ", ".join(map(str, v.argtypes)) if v.argtypes is not None else None
             print("{: <12} {: <15} {: <15} {: <20}"
                   .format("{0.line}:{0.col}".format(v), k, v.type, argvstring))
         print '='*62
-    map(print_symboltable, symtabs.iteritems())
+    map(print_symboltable, symtabs.items())
 
 
 def find_argtypes(tree):
@@ -254,7 +254,8 @@ def check_funcall(tree, symtab):
                         .format(tree.tok.line, tree.tok.col, fname,
                                 ', '.join(map(str, funsym.argtypes)),
                                 ', '.join(map(str, received))))
-    check_functionbinding(funsym.tree, symtab, fname)
+    globsymtab = {k: sym for k, sym in symtab.items() if sym.glob}
+    check_functionbinding(funsym.tree, globsymtab, fname)
     return gentab
 
 
@@ -340,7 +341,7 @@ def list_generics(t):
 def check_rettype_binding(tree, rettype, symtab):
     '''checks if all generics that occur in rettype are bound by the symtab'''
     boundgenerics = set()
-    for key, s in symtab.iteritems():
+    for key, s in symtab.items():
         if s.argtypes is None:
             boundgenerics |= list_generics(s.type)
     unbound = list_generics(rettype) - boundgenerics
@@ -378,7 +379,6 @@ def check_uncalled_functions(tree, globalsymtab):
     check_uncalled_functions(tree.children[1], globalsymtab)
 
 symtabs = None
-
 
 def check_binding(tree, globalsymtab=dict()):
     global symtabs
