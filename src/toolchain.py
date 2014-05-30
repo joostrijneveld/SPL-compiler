@@ -2,7 +2,7 @@
 
 # from __future__ import print_function
 import sys
-import codecs
+import io
 
 import scanner
 import parser
@@ -21,12 +21,11 @@ def main():
 	if len(sys.argv) != 3:
 		help()
 		return
-	fin = codecs.open(sys.argv[1], encoding='utf-8')
+	fin = io.open(sys.argv[1], encoding='utf-8')
 	# with open(sys.argv[1], 'r') as fin:
 	tokens = scanner.scan_spl(fin)
 	fin.close()
-	print unicode(tokens[3])
-	print tokens
+	print map(unicode, tokens)
 
 	# print len(tokens)
 	# tree = parser.build_tree(tokens)

@@ -61,7 +61,7 @@ def update_candidates(candidates, token):
             if not re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
                 candidates.remove(t)
         elif t == 'char':
-            if not token[0] == "'" or len(token) > 3 or len(token) == 3 and token[2] != "'":
+            if token[0] != "'" or len(token) > 3 or len(token) == 3 and token[2] != "'":
                 candidates.remove(t)
         elif t == 'int':
             if not token.isdigit():
@@ -72,32 +72,18 @@ def update_candidates(candidates, token):
 
 
 def complete_token(candidates, token, tokens, p):
-    print '>>>', token, len(candidates)
-    if len(candidates) == 1:
-        if candidates[0] == 'char' and not (token[0] == token[-1] == "'"):
-            raise Exception("Invalid character "+token)
-        result = candidates[0]
+    if token in ['True', 'False']:
+        tokens.append(Token(p.line, p.eval_tokpos(), 'bool', token == 'True'))
+    elif token in LITERALS:
+        tokens.append(Token(p.line, p.eval_tokpos(), token, None))
+    elif re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
+        tokens.append(Token(p.line, p.eval_tokpos(), 'id', token))
+    elif len(token) == 3 and token[0] == token[-1] == "'":
+        tokens.append(Token(p.line, p.eval_tokpos(), 'char', token))
+    elif token.isdigit():
+        tokens.append(Token(p.line, p.eval_tokpos(), 'int', int(token)))
     else:
-        for t in list(candidates):
-            if t in LITERALS and token == t or t == 'int' and token.isdigit():
-                result = t
-                break
-        else:
-            if re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
-                result = 'id'
-            elif token[0] == token[-1] == "'":
-                raise Exception("hoi")
-                result = 'char'
-            else:
-                raise Exception("Unrecognised token: "+token)
-    if result in ['id', 'char']:
-        tokens.append(Token(p.line, p.eval_tokpos(), result, token))
-    elif result == 'int':
-        tokens.append(Token(p.line, p.eval_tokpos(), result, int(token)))
-    elif result in ['True', 'False']:  # exceptional case for booleans
-        tokens.append(Token(p.line, p.eval_tokpos(), 'bool', result == 'True'))
-    else:
-        tokens.append(Token(p.line, p.eval_tokpos(), result, None))
+        raise Exception("Unrecognised token: "+token)
 
 
 def scan_spl(fin):
