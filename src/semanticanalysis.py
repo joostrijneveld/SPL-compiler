@@ -10,7 +10,7 @@ Symbol = namedtuple('Symbol',
                     ['line', 'col', 'type', 'argtypes', 'glob', 'tree'])
 
 
-class Type:
+class Type(object):
     def __init__(self, value):
         self.value = value
 
@@ -28,7 +28,7 @@ class Type:
 
     def __repr__(self):
         return repr(self.value)
-
+        
     def unify(self, other):
         ''' attempts to unify non-generic types (necessary for empty lists)
             return value None means no unification could be found '''
@@ -55,19 +55,18 @@ class Type:
 
 
 def print_symboltables(symtabs):
-    def print_symboltable((fname, symboltable)):
+    for fname, symboltable in symtabs.items():
         if not symboltable:
-            return
-        print "{:=^62}".format(" {} ".format(fname))
+            continue
+        print("{:=^62}".format(" {} ".format(fname)))
         print("{0: <12} {1: <15} {2: <15} {3: <20}"
               .format('Position', 'Name', 'Type', 'Argtypes'))
-        print '-'*62
+        print('-'*62)
         for k, v in symboltable.items():
-            argvstring = ", ".join(map(str, v.argtypes)) if v.argtypes is not None else None
-            print("{: <12} {: <15} {: <15} {: <20}"
+            argvstring = ", ".join(map(str, v.argtypes)) if v.argtypes is not None else ""
+            print("{: <12} {: <15} {!s: <15} {: <20}"
                   .format("{0.line}:{0.col}".format(v), k, v.type, argvstring))
-        print '='*62
-    map(print_symboltable, symtabs.items())
+        print('='*62)
 
 
 def find_argtypes(tree):

@@ -5,7 +5,7 @@ from functools import partial
 from scanner import Token
 
 
-class Node:
+class Node(object):
     def __init__(self, tok, *children):
         self.tok = tok
         self.children = list(children)

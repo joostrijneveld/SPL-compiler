@@ -2,7 +2,6 @@
 
 from semanticanalysis import Type
 from functools import partial
-from itertools import chain
 
 HPBASE = 2000  # 7d0, initial value of HP
 
@@ -173,4 +172,4 @@ def generate_ssm(tree, tables, fout):
             'eq', 'str RR', 'unlink', 'ret'])
     for x in asm:
         fout.write(x+'\n')
-    print wab
+    print(wab)

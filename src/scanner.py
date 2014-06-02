@@ -16,12 +16,8 @@ TOKENTYPES = ['id', 'int', 'char'] + LITERALS
 
 class Token(namedtuple('TokenBase', ['line', 'col', 'type', 'val'])):
     def __repr__(self):
-        
-        #return (self.type + ('['+str(self.val)+']')*(self.val is not None) +
-         #       ' [' + str(self.line) + ':' + str(self.col) + ']')
-        t = (self.type + ('['+unicode(self.val)+']')*(self.val is not None) +
-                 ' [' + unicode(self.line) + ':' + unicode(self.col) + ']')
-        return t
+        return (self.type + ('['+str(self.val)+']')*(self.val is not None) +
+               ' [' + str(self.line) + ':' + str(self.col) + ']')
 
 
 class Position:
