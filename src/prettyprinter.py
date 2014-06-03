@@ -114,8 +114,10 @@ def print_exp(tree):
         out(' '+tree.tok.type+' ')
         print_exp(tree.children[1])
         out(')')
-    elif tree.tok.type in ['int', 'bool', 'char']:
+    elif tree.tok.type in ['int', 'bool']:
         out(str(tree.tok.val))
+    elif tree.tok.type == 'char':
+        out("'"+tree.tok.val+"'")
     elif tree.tok.type in ['.hd', '.tl', '.fst', '.snd'] \
         or tree.tok.type == 'id':
         print_field(tree)

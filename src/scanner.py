@@ -75,7 +75,7 @@ def complete_token(candidates, token, tokens, p):
     elif re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
         tokens.append(Token(p.line, p.eval_tokpos(), 'id', token))
     elif len(token) == 3 and token[0] == token[-1] == "'":
-        tokens.append(Token(p.line, p.eval_tokpos(), 'char', token))
+        tokens.append(Token(p.line, p.eval_tokpos(), 'char', token[1:-1]))
     elif token.isdigit():
         tokens.append(Token(p.line, p.eval_tokpos(), 'int', int(token)))
     else:

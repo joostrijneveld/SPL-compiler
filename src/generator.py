@@ -31,6 +31,8 @@ def gen_exp_id(tree, wab, tables):
 def gen_exp_base(tree, wab, tables):
     if tree.tok.type == 'int':
         return ['ldc ' + str(tree.tok.val)]
+    elif tree.tok.type == 'char':
+        return ['ldc ' + str(ord(tree.tok.val))]
     elif tree.tok.type == 'bool':
         return ['ldc ' + str(-1 * int(tree.tok.val))]  # True = 11....111
     elif tree.tok.type == '[]':
