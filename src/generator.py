@@ -138,7 +138,9 @@ def gen_vardecl(tree, wab, tables):
 
 
 def gen_fundecl(tree, wab, tables):
-    wab[1] = dict()
+    if tree.children[1].tok.val not in tables:
+        return []
+    wab = [wab[0], dict()]
     address_args(tree.children[2], wab)
     result = [tree.children[1].tok.val+':']
     numargs = len(tables[tree.children[1].tok.val].argtypes)
@@ -175,4 +177,3 @@ def generate_ssm(tree, tables, fout):
             'eq', 'str RR', 'unlink', 'ret'])
     for x in asm:
         fout.write(x+'\n')
-    print(wab)

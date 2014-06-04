@@ -256,6 +256,7 @@ def check_funcall(tree, symtab):
                                 ', '.join(map(str, funsym.argtypes)),
                                 ', '.join(map(str, received))))
     globsymtab = {k: sym for k, sym in symtab.items() if sym.glob}
+    usedfns.add(fname)
     check_functionbinding(funsym.tree, globsymtab, fname)
     return gentab
 
@@ -380,6 +381,7 @@ def check_uncalled_functions(tree, globalsymtab):
     check_uncalled_functions(tree.children[1], globalsymtab)
 
 symtabs = None
+usedfns = set()
 
 def check_binding(tree, globalsymtab=dict()):
     global symtabs
@@ -387,6 +389,8 @@ def check_binding(tree, globalsymtab=dict()):
     symtabs['_glob'] = dict(globalsymtab)
     symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, False))
     symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, True))
+    usedsyms = {k: v for k, v in symtabs['_glob'].items()
+        if k in usedfns or v.argtypes is None}
     check_uncalled_functions(tree, symtabs['_glob'])
     print_symboltables(symtabs)
-    return symtabs['_glob']
+    return usedsyms
