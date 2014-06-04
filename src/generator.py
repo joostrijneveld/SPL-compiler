@@ -170,6 +170,7 @@ def generate_ssm(tree, tables, fout):
            gen_decls(tree, wab, tables, True) + ['halt'] +
            gen_decls(tree, wab, tables, False) +
            ['print:', 'link 1', 'ldl 1', 'trap 0', 'unlink', 'ret'] +
+           ['printChar:', 'link 1', 'ldl 1', 'trap 1', 'unlink', 'ret'] +
            ['isEmpty:', 'link 1', 'ldl 1', 'ldc 0',
             'eq', 'str RR', 'unlink', 'ret'])
     for x in asm:
