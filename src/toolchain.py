@@ -9,6 +9,7 @@ import parser
 import prettyprinter
 import semanticanalysis
 import generator
+import stdlib
 
 from semanticanalysis import Type, Symbol
 
@@ -28,15 +29,10 @@ def main():
 	# print(tokens)
 	tree = parser.build_tree(tokens)
 	# print str(tree)
-	predefined = {
-		'isEmpty': Symbol(0, 0, Type('Bool'), [Type([Type('t')])], True, None),
-		'print'  : Symbol(0, 0, Type('Void'), [Type('t')], True, None),
-		'printChar' : Symbol(0, 0, Type('Void'), [Type('Char')], True, None)
-	}
-	symtab = semanticanalysis.check_binding(tree, predefined)
+	symtab = semanticanalysis.check_binding(tree, stdlib.functions)
 	prettyprinter.print_tree(tree)
 	with open(sys.argv[2], 'w') as fout:
-		generator.generate_ssm(tree, symtab, fout)
+		generator.generate_ssm(tree, symtab, stdlib.functions, fout)
 	
 if __name__ == '__main__':
 	main()

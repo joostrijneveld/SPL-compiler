@@ -163,15 +163,25 @@ def gen_decls(tree, wab, tables, vardecls, reserve=False):
     return result + gen_decls(tree.children[1], wab, tables, vardecls, reserve)
 
 
-def generate_ssm(tree, tables, fout):
+def gen_builtins(tables, builtins):
+    result = []
+    for k, (symbol, asm) in builtins.items():
+        if k in tables:
+            result.append(k + ':')
+            result.append('link ' + str(len(symbol.argtypes)))
+            result += asm
+            if symbol.type != Type('Void'):
+                result += ['str RR']
+            result += ['unlink', 'ret']
+    return result
+
+
+def generate_ssm(tree, tables, builtins, fout):
     wab = [dict(), dict()]  # global and local address book
     asm = (gen_decls(tree, wab, tables, True, True) +
            ['ldc ' + str(HPBASE + len(wab[0])), 'str HP'] +
            gen_decls(tree, wab, tables, True) + ['halt'] +
            gen_decls(tree, wab, tables, False) +
-           ['print:', 'link 1', 'ldl 1', 'trap 0', 'unlink', 'ret'] +
-           ['printChar:', 'link 1', 'ldl 1', 'trap 1', 'unlink', 'ret'] +
-           ['isEmpty:', 'link 1', 'ldl 1', 'ldc 0',
-            'eq', 'str RR', 'unlink', 'ret'])
+           gen_builtins(tables, builtins))
     for x in asm:
         fout.write(x+'\n')

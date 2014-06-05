@@ -386,10 +386,10 @@ def check_uncalled_functions(tree, globalsymtab):
 symtabs = None
 usedfns = set()
 
-def check_binding(tree, globalsymtab=dict()):
+def check_binding(tree, builtins=dict()):
     global symtabs
-    symtabs = {k: None for k in globalsymtab}  # assume predef. functions are ok
-    symtabs['_glob'] = dict(globalsymtab)
+    symtabs = {k: None for k in builtins}  # assume predef. functions are ok
+    symtabs['_glob'] = {k: v[0] for k, v in builtins.items()}
     symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, False))
     symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, True))
     usedsyms = {k: v for k, v in symtabs['_glob'].items()
