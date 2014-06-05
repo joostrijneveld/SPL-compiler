@@ -40,8 +40,6 @@ def gen_exp_base(tree, wab, tables):
     elif tree.tok.type == 'FunCall':
         rettype = tables[tree.children[0].tok.val].type
         result = gen_funcall(tree, wab, tables)
-        if rettype != Type('Void'):
-            result += ['ldr RR']
         return result
     elif tree.tok.type == ',':
         result = (gen_exp(tree.children[0], wab, tables) +

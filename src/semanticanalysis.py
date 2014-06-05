@@ -28,6 +28,9 @@ class Type(object):
 
     def __repr__(self):
         return repr(self.value)
+
+    def __eq__(self, other):
+        return self.value == other.value
         
     def unify(self, other):
         ''' attempts to unify non-generic types (necessary for empty lists)
