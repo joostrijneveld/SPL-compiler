@@ -165,12 +165,14 @@ def gen_builtins(tables, builtins):
     result = []
     for k, (symbol, asm) in builtins.items():
         if k in tables:
-            result.append(k + ':')
-            result.append('link ' + str(len(symbol.argtypes)))
-            result += asm
+            fnresult = asm
             if symbol.type != Type('Void'):
-                result += ['str RR']
-            result += ['unlink', 'ret']
+                fnresult += ['str RR']
+            if len(symbol.argtypes) > 0:
+                fnresult = (['link ' + str(len(symbol.argtypes))] +
+                          fnresult + ['unlink'])
+            fnresult = [k + ':'] + fnresult + ['ret']
+            result += fnresult
     return result
 
 
