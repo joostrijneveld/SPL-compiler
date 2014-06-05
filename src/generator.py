@@ -38,9 +38,7 @@ def gen_exp_base(tree, wab, tables):
     elif tree.tok.type == '[]':
         return ['ldc 0']
     elif tree.tok.type == 'FunCall':
-        rettype = tables[tree.children[0].tok.val].type
-        result = gen_funcall(tree, wab, tables)
-        return result
+        return gen_funcall(tree, wab, tables) + ['ldr RR']
     elif tree.tok.type == ',':
         result = (gen_exp(tree.children[0], wab, tables) +
                   gen_exp(tree.children[1], wab, tables))
