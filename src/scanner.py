@@ -51,6 +51,23 @@ def handle_comments(f, blockcomment, p):
         p.nextline()
 
 
+def preprocess_string(f, p):
+    chararray = []
+    c = ''
+    while c != '"':
+        c = f.read(1)
+        if not c:
+            raise Exception("Unfinished string. Reached end of file.")
+        p.col += 1
+        if c == '\n':
+            p.nextline()
+        if c != '"':
+            chararray.append(Token(p.line, p.eval_tokpos(), 'char', c))
+            chararray.append(Token(p.line, p.eval_tokpos(), ':', None))
+    chararray.append(Token(p.line, p.eval_tokpos(), '[]', None))
+    return chararray
+
+
 def update_candidates(candidates, token):
     for t in list(candidates):
         if t == 'id':
@@ -102,6 +119,11 @@ def scan_spl(fin):
         token += c
         if token in ['//', '/*']:
             handle_comments(fin, token == '/*', p)
+            token = ''
+            candidates = list(TOKENTYPES)
+        elif token in ['"']:
+            p.eval_tokpos()  # to correct for the opening quote
+            tokens += preprocess_string(fin, p)
             token = ''
             candidates = list(TOKENTYPES)
         else:
