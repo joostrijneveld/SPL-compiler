@@ -170,7 +170,7 @@ def gen_builtins(tables, builtins):
                 fnresult += ['str RR']
             if len(symbol.argtypes) > 0:
                 fnresult = (['link ' + str(len(symbol.argtypes))] +
-                          fnresult + ['unlink'])
+                            fnresult + ['unlink'])
             fnresult = [k + ':'] + fnresult + ['ret']
             result += fnresult
     return result

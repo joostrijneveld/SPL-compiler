@@ -17,7 +17,7 @@ TOKENTYPES = ['id', 'int', 'char'] + LITERALS
 class Token(namedtuple('TokenBase', ['line', 'col', 'type', 'val'])):
     def __repr__(self):
         return (self.type + ('['+str(self.val)+']')*(self.val is not None) +
-               ' [' + str(self.line) + ':' + str(self.col) + ']')
+                ' [' + str(self.line) + ':' + str(self.col) + ']')
 
 
 class Position:
@@ -74,7 +74,9 @@ def update_candidates(candidates, token):
             if not re.match('^[a-z][a-z0-9_]*\Z', token, re.IGNORECASE):
                 candidates.remove(t)
         elif t == 'char':
-            if token[0] != "'" or len(token) > 3 or len(token) == 3 and token[2] != "'":
+            if token[0] != "'":
+                candidates.remove(t)
+            if len(token) > 3 or len(token) == 3 and token[2] != "'":
                 candidates.remove(t)
         elif t == 'int':
             if not token.isdigit():

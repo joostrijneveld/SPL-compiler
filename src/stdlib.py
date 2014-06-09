@@ -22,8 +22,8 @@ functions = {
     'readChar': (Symbol(0, 0, Type('Char'), [], True, None),
         ['trap 3']),
     'readCharList': (Symbol(0, 0, Type([Type('Char')]), [], True, None),
-        ['trap 4', 'brf endemptylist', 'ajs 1', 'ldc 0', 'loopCharList:', 'sth',
-        'ajs -1', 'sth', 'ajs -1', 'brf endloopCharList', 'ajs 2',
+        ['trap 4', 'brf endemptylist', 'ajs 1', 'ldc 0', 'loopCharList:',
+        'sth', 'ajs -1', 'sth', 'ajs -1', 'brf endloopCharList', 'ajs 2',
         'bra loopCharList', 'endloopCharList:', 'ajs 2', 'str RR', 'ajs -1',
         'unlink', 'ret', 'endemptylist:', 'ldc 0'])
 }

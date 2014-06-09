@@ -144,22 +144,22 @@ def parse_stmt(tokens):
                     .format(tok.line, tok.col, tok.type))
 
 
-def parse_exp_field(id_tok, tokens):
-    t = Node(id_tok)
+def parse_exp_field(tok, tokens):
+    t = Node(tok)
     while tokens and tokens[0].type in ['.hd', '.tl', '.fst', '.snd']:
         tok = tokens.popleft()
         t = Node(tok, t)
     return t
 
 
-def parse_exp_func(id_tok, tokens):
-    t_left = Node(id_tok)
+def parse_exp_func(tok, tokens):
+    t_left = Node(tok)
     pop_token(tokens, '(')
     t_right = None
     if tokens[0].type != ')':
         t_right = parse_exp_args(tokens)
     pop_token(tokens, ')')
-    return Node(Token(id_tok.line, id_tok.col, 'FunCall', None), t_left, t_right)
+    return Node(Token(tok.line, tok.col, 'FunCall', None), t_left, t_right)
 
 
 def parse_exp_args(tokens):

@@ -149,42 +149,42 @@ def type_exp_base(tree, symtab):
 
 def type_op(fn, in_types, out_type, ops, tree, symtab):
     if tree.tok.type in ops:
-        rev_types = map(partial(type_exp, symtab=symtab), tree.children)
+        recv_types = map(partial(type_exp, symtab=symtab), tree.children)
         gentab = dict()
-        if not all(apply_generics(e, r, gentab) for e, r in zip(in_types, rev_types)):
+        if not all(apply_generics(e, r, gentab) for e, r in zip(in_types, recv_types)):
             raise Exception("[Line {}:{}] Incompatible types for operator '{}'\n"
                             "  Types expected: {}\n"
                             "  Types found: {}"
                             .format(tree.tok.line, tree.tok.col, tree.tok.type,
                                     ', '.join(map(str, in_types)),
-                                    ', '.join(map(str, rev_types))))
+                                    ', '.join(map(str, recv_types))))
         return apply_gentab(tree, out_type, gentab)
     return fn(tree, symtab)
 
 type_exp_hd = partial(type_op, type_id,
-                      [Type([Type('t')])], Type('t'), ['.hd'])
+    [Type([Type('t')])], Type('t'), ['.hd'])
 type_exp_tl = partial(type_op, type_exp_hd,
-                      [Type([Type('t')])], Type([Type('t')]), ['.tl'])
+    [Type([Type('t')])], Type([Type('t')]), ['.tl'])
 type_exp_fst = partial(type_op, type_exp_tl,
-                       [Type((Type('a'), Type('b')))], Type('a'), ['.fst'])
+    [Type((Type('a'), Type('b')))], Type('a'), ['.fst'])
 type_exp_snd = partial(type_op, type_exp_fst,
-                       [Type((Type('a'), Type('b')))], Type('b'), ['.snd'])
+    [Type((Type('a'), Type('b')))], Type('b'), ['.snd'])
 type_exp_field = type_exp_snd
 
 type_exp_unint = partial(type_op, type_exp_base,
-                         [Type('Int')], Type('Int'), ['-'])
+    [Type('Int')], Type('Int'), ['-'])
 type_exp_unbool = partial(type_op, type_exp_unint,
-                          [Type('Bool')], Type('Bool'), ['!'])
+    [Type('Bool')], Type('Bool'), ['!'])
 type_exp_con = partial(type_op, type_exp_unbool,
-                       [Type('t'), Type([Type('t')])], Type([Type('t')]), [':'])
+    [Type('t'), Type([Type('t')])], Type([Type('t')]), [':'])
 type_exp_math = partial(type_op, type_exp_con,
-                        [Type('Int'), Type('Int')], Type('Int'), ['+', '-', '*', '/', '%'])
+    [Type('Int'), Type('Int')], Type('Int'), ['+', '-', '*', '/', '%'])
 type_exp_cmp = partial(type_op, type_exp_math,
-                       [Type('Int'), Type('Int')], Type('Bool'), ['<', '<=', '>', '>='])
+    [Type('Int'), Type('Int')], Type('Bool'), ['<', '<=', '>', '>='])
 type_exp_eq = partial(type_op, type_exp_cmp,
-                      [Type('t'), Type('t')], Type('Bool'), ['==', '!='])
+    [Type('t'), Type('t')], Type('Bool'), ['==', '!='])
 type_exp_andor = partial(type_op, type_exp_eq,
-                         [Type('Bool'), Type('Bool')], Type('Bool'), ['&&', '||'])
+    [Type('Bool'), Type('Bool')], Type('Bool'), ['&&', '||'])
 type_exp = type_exp_andor
 
 
@@ -328,7 +328,8 @@ def check_vardecl(tree, symtab):
                         "  Expected expression of type: {}\n"
                         "  But got value of type: {}"
                         .format(tree.children[1].tok.line,
-                                tree.children[1].tok.col, tree.children[1].tok.val,
+                                tree.children[1].tok.col,
+                                tree.children[1].tok.val,
                                 vartype, exptype))
 
 
@@ -386,6 +387,7 @@ def check_uncalled_functions(tree, globalsymtab):
 symtabs = None
 usedfns = set()
 
+
 def check_binding(tree, builtins=dict()):
     global symtabs
     symtabs = {k: None for k in builtins}  # assume predef. functions are ok
@@ -393,7 +395,7 @@ def check_binding(tree, builtins=dict()):
     symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, False))
     symtabs['_glob'].update(create_table(tree, symtabs['_glob'], True, True))
     usedsyms = {k: v for k, v in symtabs['_glob'].items()
-        if k in usedfns or v.argtypes is None}
+                if k in usedfns or v.argtypes is None}
     check_uncalled_functions(tree, symtabs['_glob'])
     print_symboltables(symtabs)
     return usedsyms
