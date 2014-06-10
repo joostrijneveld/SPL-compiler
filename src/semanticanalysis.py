@@ -16,7 +16,8 @@ class Type(object):
 
     @staticmethod
     def from_node(tree):  # tree is a Type-node
-        if tree.tok.type in ['Bool', 'Int', 'Void', 'Char']:
+        if tree.tok.type in ['Bool', 'Int', 'Void', 'Char',
+                             'FileReader', 'FileWriter']:
             return Type(tree.tok.type)
         elif tree.tok.type == 'id':
             return Type(tree.tok.val)
@@ -202,7 +203,7 @@ def type_expfunc(tree, symtab):
 
 def apply_gentab(tree, t, gentab):
     '''replaces generics that occur in t with their literal type from gentab'''
-    if t.value in ['Int', 'Bool', 'Void', 'Char']:
+    if t.value in ['Int', 'Bool', 'Void', 'Char', 'FileReader', 'FileWriter']:
         return t
     if type(t.value) is str:
         return gentab[t.value]  # validated that it is always in the gentab
@@ -215,7 +216,7 @@ def apply_gentab(tree, t, gentab):
 
 def apply_generics(gen_type, lit_type, gentab):
     ''' checks if gen_type can be applied to lit_type, updates gentab '''
-    if gen_type.value in ['Int', 'Bool', 'Char']:
+    if gen_type.value in ['Int', 'Bool', 'Char', 'FileReader', 'FileWriter']:
         return gen_type.unify(lit_type) is not None
     if type(gen_type.value) is str:
         if gen_type.value in gentab:
@@ -334,7 +335,7 @@ def check_vardecl(tree, symtab):
 
 
 def list_generics(t):
-    if t.value in ['Int', 'Bool', 'Void', 'Char']:
+    if t.value in ['Int', 'Bool', 'Void', 'Char', 'FileReader', 'FileWriter']:
         return set()
     if type(t.value) is str:
         return set([t.value])
