@@ -18,12 +18,13 @@ functions = {
     'printBool': (Symbol(0, 0, Type('Void'), [Type('Bool')], True, None),
         ['ldl 1', 'brf 4', 'ldc 128515', 'bra 2', 'ldc 128542', 'trap 1']),
     'readInt': (Symbol(0, 0, Type('Int'), [], True, None),
-        ['trap 2']),
+        ['trap 10']),
     'readChar': (Symbol(0, 0, Type('Char'), [], True, None),
-        ['trap 3']),
+        ['trap 11']),
     'readCharList': (Symbol(0, 0, Type([Type('Char')]), [], True, None),
-        ['trap 4', 'brf endemptylist', 'ajs 1', 'ldc 0', 'loopCharList:',
-        'sth', 'ajs -1', 'sth', 'ajs -1', 'brf endloopCharList', 'ajs 2',
-        'bra loopCharList', 'endloopCharList:', 'ajs 2', 'str RR', 'ajs -1',
-        'unlink', 'ret', 'endemptylist:', 'ldc 0'])
+        ['trap 12', 'brf emptyCharList', 'ajs 1', 'ldc 0', 'sth', 'ajs -1',
+        'sth', 'str RR', 'brf endLoopCharList', 'ajs 1', 'ldr RR',
+        'loopCharList:', 'ldc 0', 'sth', 'ajs -2', 'sth', 'ajs 1', 'sta -1',
+        'brf endLoopCharList', 'ajs 2', 'bra loopCharList', 'endLoopCharList:',
+        'ret', 'emptyCharList:', 'ldc 0'])
 }
