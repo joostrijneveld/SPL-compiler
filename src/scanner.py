@@ -10,8 +10,8 @@ LITERALS = [
     '==', '<', '>', '<=', '>=', '!=',
     ',', ';', '{', '}', '[', ']', '(', ')', '=',
     '.hd', '.tl', '.fst', '.snd']
-
-TOKENTYPES = ['id', 'int', 'char'] + LITERALS
+SPECIALS = ['"', "//", "/*"]
+TOKENTYPES = ['id', 'int', 'char'] + LITERALS + SPECIALS
 
 
 class Token(namedtuple('TokenBase', ['line', 'col', 'type', 'val'])):
@@ -107,6 +107,15 @@ def scan_spl(fin):
     prevcandidates = candidates = list(TOKENTYPES)
     prevtoken = token = ''
     while True:
+        if token in SPECIALS:
+            if token in ['//', '/*']:
+                handle_comments(fin, token == '/*', p)
+            elif token in ['"']:
+                p.eval_tokpos()  # to correct for the opening quote
+                tokens += preprocess_string(fin, p)
+            token = ''
+            candidates = list(TOKENTYPES)
+            continue
         c = fin.read(1)
         p.col += 1
         if not c:  # no more chars to read
@@ -119,24 +128,14 @@ def scan_spl(fin):
                 p.nextline()
             continue  # no token, and the next char is whitespace => skip!
         token += c
-        if token in ['//', '/*']:
-            handle_comments(fin, token == '/*', p)
-            token = ''
-            candidates = list(TOKENTYPES)
-        elif token in ['"']:
-            p.eval_tokpos()  # to correct for the opening quote
-            tokens += preprocess_string(fin, p)
-            token = ''
-            candidates = list(TOKENTYPES)
-        else:
-            update_candidates(candidates, token)
-            if not candidates:  # so if the current token is not valid
-                complete_token(prevcandidates, prevtoken, tokens, p)
-                if token[-1] == '\n':
-                    p.nextline()
-                # start next token with invalidating character
-                token = token[-1].strip()
-                candidates = list(TOKENTYPES)  # re-instantiate all candidates
+        update_candidates(candidates, token)
+        if not candidates:  # so if the current token is not valid
+            complete_token(prevcandidates, prevtoken, tokens, p)
+            if token[-1] == '\n':
+                p.nextline()
+            # start next token with invalidating character
+            token = token[-1].strip()
+            candidates = list(TOKENTYPES)  # re-instantiate all candidates
         # prepare for next iteration
         prevtoken, prevcandidates = token, list(candidates)
     return tokens
