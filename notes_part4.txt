@@ -1,28 +1,64 @@
 
-SPL/SSM-fix-van-allerlei-dingen
-	system calls:
-s		printen van ascii
-s		user input
-s		sockets / file IO
+Plannen:
+	SPL/SSM-fix-van-allerlei-dingen
+		system calls:
+	s		printen van ascii
+	s		user input
+	s		sockets / file IO
+			
+		dingen die SPL en code-gen aanpassen
+	s		strings, characters
+	s		heap en stack zoals in het echt memory-model
+			operator overloading
+				functies worden niet alleen op naam ge-identified, maar ook op argumenten
+			infix functies
+			triviale SPL-dingen zoals n-tuples
+			lazy evaluation dmv generators
+			simple imports / moduling
+			
+		language constructs die je kan vertalen naar andere SPL (preprocessor):
+			pattern matching
+			switch-cases
+			forloops (enhanced)
+			list comprehensions
+			tuple unpacking
 		
-	dingen die SPL en code-gen aanpassen
-s		strings, characters
-s		heap en stack zoals in het echt memory-model
-		operator overloading
-			functies worden niet alleen op naam ge-identified, maar ook op argumenten
-		infix functies
-		triviale SPL-dingen zoals n-tuples
-		lazy evaluation dmv generators
-		simple imports / moduling
+		various Stdlib functions in SPL (for fun)
 		
-	language constructs die je kan vertalen naar andere SPL (preprocessor):
-		pattern matching
-		switch-cases
-		forloops (enhanced)
-		list comprehensions
-		tuple unpacking
+Dingen die we doen:
+	- trap 1 is 'print een integer als unicode char'
+	- trap 2 is 'lees een integer in een dialoogje en push op de stack'
+	- trap 3 is 'lees een char in een dialoogje, push de bijbehorende unicode int op de stack'
+	- trap 4 is 'lees een string, push als lijstje in de heap??'
+	we hebben typecasts
 	
-	various Stdlib functions in SPL (for fun)
-	
+filepointer willen we opslaan in de heap
+we willen een fopen [Char] -> inputFile
+we willen nextChar iFile -> Char
+we willen writeChar oFile Char -> void
+we willen close inputFile -> Void
 
-	
+
+readChar van een file moet een trap voor komen
+writeChar naar een file ook
+file openen moet ook een trap voor (1 voor read, 1 voor write)
+file closen moet ook een trap voor (1 is genoeg? )
+
+fopen is een trap die een filename op de stack verwacht
+	opent een file in Java, returnt een identifier-nummertje
+
+[Char] x = "hoi"; -> [Char] x = 'h' : ..
+
+
+Types:
+FileReader
+FileWriter
+
+openReadFile [Char]	-> FileReader
+openWriteFile [Char]	-> FileWriter
+
+readChar FileReader-> Char
+writeChar FileWriter, Char -> Void
+
+closeReadFile FileReader -> Void
+writeReadFile FileWriter -> Void

@@ -1,0 +1,16 @@
+
+
+
+UTF-8-byterepresentatie: van U+01F435 (aap: 🐵) 0b11110000 10011111 10010000 10110101
+UTF-32BE byterep: 00000000 00000001 11110100 00110101 = 010035f4 (java zegt 00 01 f4 35)
+
+UTF-8 heeft wel markers bij zn bytes (zie http://en.wikipedia.org/wiki/UTF-8)
+UTF-32BE heeft geen markers maar is gewoon 1 op 1 van de unicode codepoint
+
+Python ord geeft 01F435 als int. Dat is de unicode van aap. dat is dus 1 op 1 met UTF-32
+
+printfunctie van standaard-dingen doet UTF-8, want dat doet het OS. Bijv. Terminal kan wel UTF-8 printen
+
+11110000 10011111 10010000 10110101
+
+00000001 11110100 00110101
