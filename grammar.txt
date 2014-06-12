@@ -38,6 +38,7 @@ ExpBase	= ExpField
 		| int
 		| bool
 		| char
+		| string
 		| "[" "]"
 		| "(" Exp ")"
 		| "(" Exp "," Exp ")"
@@ -49,4 +50,5 @@ ExpArgs	 = Exp [ "," ExpArgs ]
 int		= digit+
 id 		= alpha ("_" | alphaNum)*
 bool	= True | False
-char 	= "'" UTF8 "'"
+char 	= "'" unicode "'"
+string  = "\"" unicode* "\""
