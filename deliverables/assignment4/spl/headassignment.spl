@@ -1,0 +1,9 @@
+Int x = main();
+
+Int main() {
+	[Int] y = 1 : 2 : 3 : [];
+	[Int] z = 7 : 8 : 9 : [];
+	y.tl.tl = z;
+	
+	return y.tl.tl.hd; // Should be 7
+}

@@ -1,0 +1,15 @@
+Int x = 42;
+
+Int sum([Int] xs) {
+	if (isEmpty(xs)) {
+		return 0;
+	}
+	return xs.hd + sum(xs.tl);
+}
+
+Void main() {
+	Bool x = True; // works, but produces a warning: global x unreachable
+	Int sum = 5;
+	// Int dum = sum(1 : 2 : 3 : []); //no longer works: sum is shadowed
+	return;
+}

@@ -1,0 +1,8 @@
+[[Int]] a = [] : (5 : []) : []; // This should go right
+//[Int] b =  [] : [];           // This should go wrong
+[[Int]] c =  [] : [];           // This should go right
+[[a]] d =  [] : [];             // This should go right
+//[[a]] e =  (5 : []) : [];     // This should go wrong because a != Int
+
+// A hard one, should go right: 
+[([Bool], [Int])] f = ([],5:[]) : (True:[],[]) : []; 

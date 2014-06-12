@@ -1,0 +1,20 @@
+Int product ( [Int] list ) {
+	if (isEmpty(list)) {
+		return 1;
+	}
+	return list.hd * product(list.tl);
+}
+
+Bool all([Bool] list) {
+	if (isEmpty(list)) {
+		return True;
+	}
+	return list.hd && all(list.tl); 
+}
+
+Bool any([Bool] list) {
+	if (isEmpty(list)) {
+		return True;
+	}
+	return list.hd || any(list.tl); 
+}
