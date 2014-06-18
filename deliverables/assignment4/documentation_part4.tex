@@ -1258,6 +1258,177 @@ Position     Name            Type            Argtypes
 ==============================================================
 \end{verbatim}
 
+\subsection{User IO}
+As we already have stated earlier in this document, we added user IO to both SPL and SSM. In this section, we will demonstrate a short SPL program with user IO. The SPL file can be found in {\tt userIO.spl}:
+\lstinputlisting{spl/userIO.spl}
+In this program we print a small string that asks the user for entering an integer. After this print statement, we read in an integer (the SSM emulator will open a dialog for the user). The functions {\tt PrintChar} and {\tt readInt} are built-in function of SPL, as we already discussed. The string {\tt ``Enter int..''} will be automatically converted to a list of characters. This can already be demonstrated in the pretty printed version of this SPL program: 
+
+\begin{verbatim}
+Int x = main();
+Int main()
+{
+	[Char] printed = ('E' : ('n' : ('t' : ('e' : ('r' : (' ' : 
+	         ('i' : ('n' : ('t' : ('.' : ('.' : [])))))))))));
+	Int input = 0;
+	printCharList(printed);
+	input = readInt();
+	return input;
+}
+Void printCharList([Char] p)
+{
+	if (isEmpty(p))
+	{
+         return;
+	}
+	else
+	{
+		printChar(p.hd);
+		printCharList(p.tl);
+	}
+	return;
+}
+\end{verbatim}
+We get the following symbol table, note the huge amount of symbols that do not have a position: these are all built-in functions, and thus do not have a position.
+\begin{verbatim}
+=========================== _glob ============================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+0:0          printChar       'Void'          'Char'              
+3:5          main            'Int'                               
+0:0          printBool       'Void'          'Bool'              
+0:0          closeReadFile   'Void'          'FileReader'        
+0:0          closeWriteFile  'Void'          'FileWriter'        
+0:0          readChar        'Char'                              
+0:0          readFromFile    'Char'          'FileReader'        
+0:0          isEmpty         'Bool'          ['t']               
+0:0          writeToFile     'Void'          'FileWriter', 'Char'
+0:0          toInt           'Int'           't'                 
+0:0          openReadFile    'FileReader'    ['Char']            
+1:5          x               'Int'                               
+0:0          openWriteFile   'FileWriter'    ['Char']            
+0:0          readInt         'Int'                               
+0:0          readCharList    ['Char']                            
+0:0          toBool          'Bool'          't'                 
+12:6         printCharList   'Void'          ['Char']            
+0:0          toChar          'Char'          't'                 
+==============================================================
+============================ main ============================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+3:5          main            'Int'                               
+0:0          printBool       'Void'          'Bool'              
+0:0          closeWriteFile  'Void'          'FileWriter'        
+0:0          readChar        'Char'                              
+0:0          readFromFile    'Char'          'FileReader'        
+0:0          isEmpty         'Bool'          ['t']               
+12:6         printCharList   'Void'          ['Char']            
+0:0          readInt         'Int'                               
+5:6          input           'Int'                               
+0:0          printChar       'Void'          'Char'              
+0:0          closeReadFile   'Void'          'FileReader'        
+4:9          printed         ['Char']                            
+0:0          writeToFile     'Void'          'FileWriter', 'Char'
+0:0          toInt           'Int'           't'                 
+0:0          openReadFile    'FileReader'    ['Char']            
+0:0          openWriteFile   'FileWriter'    ['Char']            
+0:0          toChar          'Char'          't'                 
+0:0          readCharList    ['Char']                            
+0:0          toBool          'Bool'          't'                 
+==============================================================
+======================= printCharList ========================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+3:5          main            'Int'                               
+0:0          printBool       'Void'          'Bool'              
+0:0          closeWriteFile  'Void'          'FileWriter'        
+0:0          readChar        'Char'                              
+0:0          readFromFile    'Char'          'FileReader'        
+0:0          isEmpty         'Bool'          ['t']               
+12:6         printCharList   'Void'          ['Char']            
+12:27        p               ['Char']                            
+0:0          readInt         'Int'                               
+0:0          printChar       'Void'          'Char'              
+0:0          closeReadFile   'Void'          'FileReader'        
+0:0          writeToFile     'Void'          'FileWriter', 'Char'
+0:0          toInt           'Int'           't'                 
+0:0          openReadFile    'FileReader'    ['Char']            
+0:0          openWriteFile   'FileWriter'    ['Char']            
+0:0          toChar          'Char'          't'                 
+0:0          readCharList    ['Char']                            
+0:0          toBool          'Bool'          't'                 
+==============================================================
+\end{verbatim}
+
+\subsection{File IO}
+In this section, we will introduce an example with file IO. The SPL file can be found in {\tt fileIO.spl}. 
+\lstinputlisting{spl/fileIO.spl}
+In this program, we will write the character `a' into the file {\tt test.txt}. After the character has been written, we write a newline to the file and close the file to flush the write buffer. 
+
+We get the following pretty-printed version of the program (note that the string ``test.txt'' has been converted to a list of characters). 
+\begin{verbatim}
+Int x = write(('t' : ('e' : ('s' : ('t' : ('.' : ('t' : ('x' : ('t' : [])))))))), 'a');
+Int write([Char] fname, Char content)
+{
+	FileWriter ofile = openWriteFile(fname);
+	writeToFile(ofile, content);
+	writeToFile(ofile, toChar(10));
+	closeWriteFile(ofile);
+	return 0;
+}
+\end{verbatim}
+We get the following symbol table, note that we get again a lot of built-in symbols: 
+\begin{verbatim}
+=========================== write ============================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          closeWriteFile  'Void'          'FileWriter'        
+0:0          readCharList    ['Char']                            
+0:0          toBool          'Bool'          't'                 
+0:0          printBool       'Void'          'Bool'              
+0:0          readFromFile    'Char'          'FileReader'        
+0:0          writeToFile     'Void'          'FileWriter', 'Char'
+3:5          write           'Int'           ['Char'], 'Char'    
+0:0          openReadFile    'FileReader'    ['Char']            
+0:0          printChar       'Void'          'Char'              
+3:18         fname           ['Char']                            
+0:0          toInt           'Int'           't'                 
+0:0          print           'Void'          't'                 
+0:0          openWriteFile   'FileWriter'    ['Char']            
+0:0          closeReadFile   'Void'          'FileReader'        
+0:0          toChar          'Char'          't'                 
+3:30         content         'Char'                              
+0:0          readInt         'Int'                               
+0:0          isEmpty         'Bool'          ['t']               
+0:0          readChar        'Char'                              
+4:16         ofile           'FileWriter'                        
+==============================================================
+=========================== _glob ============================
+Position     Name            Type            Argtypes            
+--------------------------------------------------------------
+0:0          print           'Void'          't'                 
+0:0          readCharList    ['Char']                            
+0:0          toBool          'Bool'          't'                 
+0:0          printBool       'Void'          'Bool'              
+3:5          write           'Int'           ['Char'], 'Char'    
+0:0          closeReadFile   'Void'          'FileReader'        
+0:0          openWriteFile   'FileWriter'    ['Char']            
+0:0          toChar          'Char'          't'                 
+0:0          readFromFile    'Char'          'FileReader'        
+0:0          closeWriteFile  'Void'          'FileWriter'        
+0:0          writeToFile     'Void'          'FileWriter', 'Char'
+0:0          readInt         'Int'                               
+0:0          isEmpty         'Bool'          ['t']               
+0:0          readChar        'Char'                              
+0:0          openReadFile    'FileReader'    ['Char']            
+0:0          printChar       'Void'          'Char'              
+1:5          x               'Int'                               
+0:0          toInt           'Int'           't'                 
+==============================================================
+\end{verbatim}
+
 \section{Division of work}
 
 \subsection{Part 2: Semantical analysis}
