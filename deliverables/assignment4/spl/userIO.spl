@@ -1,0 +1,20 @@
+Int x = main();
+
+Int main() {
+	[Char] printed = "Enter int..";
+	Int input = 0;
+	
+	printCharList(printed);
+	input = readInt();
+	return input;
+}
+
+Void printCharList([Char] p) {
+	if (isEmpty(p)) {
+		return;
+	} else {
+		printChar(p.hd);
+		printCharList(p.tl);
+	}
+}
+	

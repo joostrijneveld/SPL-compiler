@@ -1,0 +1,9 @@
+Int x = write("test.txt", 'a');
+
+Int write([Char] fname, Char content) {
+    FileWriter ofile = openWriteFile(fname);
+    writeToFile(ofile, content);
+    writeToFile(ofile, toChar(10)); // write newline
+    closeWriteFile(ofile);
+    return 0;
+}

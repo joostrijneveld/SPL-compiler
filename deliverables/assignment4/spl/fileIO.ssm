@@ -1,0 +1,125 @@
+ldc 2001
+str HP
+ajs 2
+ldc 116
+ldc 101
+ldc 115
+ldc 116
+ldc 46
+ldc 116
+ldc 120
+ldc 116
+ldc 0
+sth
+ajs -1
+sth
+sth
+ajs -1
+sth
+sth
+ajs -1
+sth
+sth
+ajs -1
+sth
+sth
+ajs -1
+sth
+sth
+ajs -1
+sth
+sth
+ajs -1
+sth
+sth
+ajs -1
+sth
+ldc 97
+ajs -4
+bsr write
+ldr RR
+ldc 2000
+sta 0
+halt
+write:
+link 3
+ajs 2
+ldl 1
+ajs -3
+bsr openWriteFile
+ldr RR
+stl 3
+ajs 2
+ldl 3
+ldl 2
+ajs -4
+bsr writeToFile
+ajs 2
+ldl 3
+ajs 2
+ldc 10
+ajs -3
+bsr toChar
+ldr RR
+ajs -4
+bsr writeToFile
+ajs 2
+ldl 3
+ajs -3
+bsr closeWriteFile
+ldc 0
+str RR
+unlink
+ret
+openWriteFile:
+link 1
+ajs 1
+ldl 1
+brf endWrite
+ajs 1
+countWrite:
+ldh -1
+brf endCountWrite
+ajs 1
+str RR
+ldr RR
+ldr RR
+bra countWrite
+endCountWrite:
+ldrr R5 SP
+ldl 1
+loadWrite:
+str RR
+ajs -1
+ldr RR
+ldr RR
+ldh 0
+ajs -1
+ldh -1
+brf endLoadWrite
+ajs 1
+bra loadWrite
+endLoadWrite:
+ldrr SP R5
+ajs 1
+endWrite:
+trap 21
+str RR
+unlink
+ret
+toChar:
+link 1
+ldl 1
+str RR
+unlink
+ret
+closeWriteFile:
+link 1
+trap 24
+unlink
+ret
+writeToFile:
+link 2
+trap 23
+unlink
+ret
