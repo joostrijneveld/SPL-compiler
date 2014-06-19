@@ -398,5 +398,4 @@ def check_binding(tree, builtins=dict()):
     usedsyms = {k: v for k, v in symtabs['_glob'].items()
                 if k in usedfns or v.argtypes is None}
     check_uncalled_functions(tree, symtabs['_glob'])
-    print_symboltables(symtabs)
-    return usedsyms
+    return (usedsyms, symtabs)
