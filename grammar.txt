@@ -9,6 +9,8 @@ FunDecl = "Void" id "(" [ Fargs ] ")" "{" VarDecl* Stmt+ "}"
 Type 	= "Int"
 		| "Bool"
 		| "Char"
+		| "FileReader"
+		| "FileWriter"
 		| "(" Type "," Type ")"
 		| "[" Type "]"
 		| id
