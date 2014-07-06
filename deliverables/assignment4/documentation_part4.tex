@@ -31,7 +31,7 @@
    showstringspaces=false      % 
   }
 
-\title{Compiler Construction part 3: Code generation}
+\title{Compiler Construction: an SPL compiler written in Python}
 \author{Joost Rijneveld, s4048911\\Koen van Ingen, s4058038}
 \date{}
 \begin{document}
@@ -63,7 +63,7 @@ Our submission contains the following files:
 \newpage
 \section{Added functionality}
 \label{part4}
-For the fourth part of this course, we have added file interaction and user interaction to SPL. In order to be able to compile this to SSM, we needed to extend the SSM assembly and interpreter.
+For the fourth part of this course, we have added file interaction and user interaction to SPL. In order to be able to compile this to SSM, we needed to extend the SSM assembly and interpreter. We included the new jar file {\tt ssm2.jar}. The source code of our fork is available on Github at \url{http://github.com/joostrijneveld/ssm} (and should soon be merged into the main branch of Atze Dijkstra's SSM interpreter).
 
 \subsection{SPL}
 
@@ -675,7 +675,7 @@ SPL has support for two built-in functions, namely the {\tt print} and the {\tt 
 % ret               ; Return to original address of function call
 % \end{lstlisting}
 
-\newpage 
+%\newpage 
 \section{Example tests}
 %TODO: add example SSM for every test program? Will take a lot of pages\ldots
 \label{examples}
@@ -1429,6 +1429,7 @@ Position     Name            Type            Argtypes
 ==============================================================
 \end{verbatim}
 
+\newpage
 \section{Division of work}
 
 \subsection{Part 2: Semantical analysis}
