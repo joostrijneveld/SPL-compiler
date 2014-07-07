@@ -1,5 +1,0 @@
-TODO
-
-- id's checken met een functie (parser)
-- linenumbers meegeven per token..?
-- newlines voor functies en vardecls in de pretty printer?
